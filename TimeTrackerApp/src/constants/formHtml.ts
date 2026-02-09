@@ -1,0 +1,2586 @@
+export const FORM_HTML = `<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Avaliação de Risco Arbóreo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      /* Premium Earthy Palette */
+      --color-primary: #1A3A34;
+      /* Dark Forest Green */
+      --color-primary-dark: #0F2420;
+      --color-secondary: #4A7C59;
+      /* Moss Green */
+      --color-accent: #D97706;
+      /* Warm Ochre */
+      --color-bg: #FDFBF7;
+      /* Cream/Beige */
+      --color-text: #1C1C1C;
+      --color-success: #2D6A4F;
+      --color-warning: #B45309;
+      --color-danger: #991B1B;
+
+      --font-display: 'Playfair Display', serif;
+      --font-body: 'Outfit', sans-serif;
+
+      --glass-bg: rgba(255, 255, 255, 0.85);
+      --glass-border: rgba(26, 58, 52, 0.1);
+      --shadow-premium: 0 10px 30px -5px rgba(26, 58, 52, 0.1), 0 4px 6px -2px rgba(26, 58, 52, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-bg);
+      background-image:
+        radial-gradient(at 0% 0%, rgba(74, 124, 89, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(217, 119, 6, 0.05) 0px, transparent 50%);
+      min-height: 100vh;
+      color: var(--color-text);
+      line-height: 1.6;
+    }
+
+    /* Premium Glassmorphism */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-premium);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -10px rgba(26, 58, 52, 0.15);
+    }
+
+    /* Premium Inputs */
+    .glass-input {
+      background: white;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 16px;
+      /* Mobile-safe */
+      transition: all 0.3s ease;
+      width: 100%;
+      outline: none;
+      color: var(--color-text);
+    }
+
+    .glass-input:focus {
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 4px rgba(74, 124, 89, 0.1);
+    }
+
+    /* Premium Buttons */
+    .glass-btn {
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 28px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      letter-spacing: 0.025em;
+      min-height: 52px;
+      /* Mobile accessibility */
+    }
+
+    .glass-btn:hover {
+      background: var(--color-primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -5px rgba(26, 58, 52, 0.3);
+    }
+
+    .glass-btn:active {
+      transform: translateY(0);
+    }
+
+    .glass-btn-secondary {
+      background: white;
+      color: var(--color-primary);
+      border: 1.5px solid var(--color-primary);
+    }
+
+    .glass-btn-secondary:hover {
+      background: #F3F4F6;
+    }
+
+    /* Risk Score Components */
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .risk-badge--success {
+      border: 2px solid var(--color-success);
+      color: var(--color-success);
+      background: #ECFDF5;
+    }
+
+    .risk-badge--warning {
+      border: 2px solid var(--color-warning);
+      color: var(--color-warning);
+      background: #FFFBEB;
+    }
+
+    .risk-badge--danger {
+      border: 2px solid var(--color-danger);
+      color: var(--color-danger);
+      background: #FEF2F2;
+    }
+
+    /* Page Visibility Control */
+    .page {
+      display: none !important;
+    }
+
+    .page.active {
+      display: block !important;
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    /* Selection Cards Styles */
+    .radio-card,
+    .checkbox-card {
+      background: white;
+      border: 2.5px solid #E5E7EB;
+      border-radius: 20px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .radio-card:hover,
+    .checkbox-card:hover {
+      border-color: var(--color-secondary);
+      background: #F0F7F2;
+    }
+
+    .radio-card.selected,
+    .checkbox-card.checked {
+      border-color: var(--color-primary) !important;
+      background: #F0F7F2 !important;
+      box-shadow: 0 10px 20px -5px rgba(26, 58, 52, 0.1);
+    }
+
+    /* Custom Check/Radio Mark */
+    .selection-indicator {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #E5E7EB;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      background: white;
+    }
+
+    .checkbox-card .selection-indicator {
+      border-radius: 6px;
+    }
+
+    .radio-card.selected .selection-indicator,
+    .checkbox-card.checked .selection-indicator {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    .radio-card.selected .selection-indicator::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .checkbox-card.checked .selection-indicator::after {
+      content: '✓';
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* Page Visibility Control */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    /* Selection Cards Styles */
+    .radio-card,
+    .checkbox-card {
+      background: white;
+      border: 2.5px solid #E5E7EB;
+      border-radius: 20px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .radio-card:hover,
+    .checkbox-card:hover {
+      border-color: var(--color-secondary);
+      background: #F0F7F2;
+    }
+
+    .radio-card.selected,
+    .checkbox-card.checked {
+      border-color: var(--color-primary);
+      background: #F0F7F2;
+      box-shadow: 0 10px 20px -5px rgba(26, 58, 52, 0.1);
+    }
+
+    .radio-indicator,
+    .checkbox-indicator {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #E5E7EB;
+      border-radius: 50%;
+      background: white;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-indicator {
+      border-radius: 6px;
+    }
+
+    .radio-card.selected .radio-indicator,
+    .checkbox-card.checked .checkbox-indicator {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+    }
+
+    .radio-card.selected .radio-indicator::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .checkbox-card.checked .checkbox-indicator::after {
+      content: '✓';
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* Bento Grid for Dashboard */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .bento-item {
+      padding: 24px;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Step Indicator Redesign */
+    .step-indicator-v2 {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 40px;
+      padding: 0 10px;
+    }
+
+    .step-v2 {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #E5E7EB;
+      color: #9CA3AF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      position: relative;
+      z-index: 2;
+      transition: all 0.4s ease;
+      cursor: pointer;
+    }
+
+    .step-v2.active {
+      background: var(--color-primary);
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 0 0 6px rgba(26, 58, 52, 0.1);
+    }
+
+    .step-v2.completed {
+      background: var(--color-secondary);
+      color: white;
+    }
+
+    .step-v2-line {
+      position: absolute;
+      top: 24px;
+      left: 10px;
+      right: 10px;
+      height: 3px;
+      background: #E5E7EB;
+      z-index: 1;
+    }
+
+    .step-v2-progress {
+      height: 100%;
+      background: var(--color-secondary);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* Custom Mobile Bottom Nav */
+    @media (max-width: 768px) {
+      .mobile-actions-fixed {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 16px;
+        box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.05);
+        display: flex;
+        gap: 12px;
+        z-index: 60;
+      }
+
+      .mobile-actions-fixed .glass-btn {
+        flex: 1;
+      }
+
+      main {
+        padding-bottom: 100px;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    /* Hide Lucide icons initially to prevent flash */
+    .lucide {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2.5;
+    }
+  </style>
+</head>
+
+<body class="antialiased">
+  <!-- Navigation -->
+  <!-- Navigation -->
+  <nav class="bg-white/95 sticky top-0 z-50 border-b border-[#1A3A34]/10">
+    <div class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-[#1A3A34] flex items-center justify-center text-white">
+          <i data-lucide="leaf"></i>
+        </div>
+        <div>
+          <h1 class="font-display text-xl font-bold text-[#1A3A34] leading-none">ARAON</h1>
+          <p class="text-[10px] font-bold text-[#D97706] tracking-[0.2em] uppercase mt-1">Avaliação de Risco Arbóreo
+            Online</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="hidden md:block text-right mr-2">
+          <p class="text-[10px] font-bold text-[#1A3A34]/40 uppercase tracking-widest">Autor</p>
+          <p class="text-[11px] font-bold text-[#1A3A34]">Rafael Ammon</p>
+        </div>
+        <a href="https://rfammon.github.io/StRafaelAmmon/" target="_blank"
+          class="flex items-center gap-2 px-4 py-2 bg-[#1A3A34]/5 hover:bg-[#1A3A34]/10 text-[#1A3A34] rounded-xl transition-all font-bold text-xs">
+          <i data-lucide="external-link" class="w-4 h-4"></i>
+          <span>Contato</span>
+        </a>
+        <button onclick="app.showDashboard()" class="p-2 text-[#1A3A34]/60 hover:text-[#1A3A34] transition-colors"
+          title="Dashboard">
+          <i data-lucide="layout-dashboard"></i>
+        </button>
+        <button onclick="app.showHistory()" class="p-2 text-[#1A3A34]/60 hover:text-[#1A3A34] transition-colors"
+          title="Histórico">
+          <i data-lucide="history"></i>
+        </button>
+        <div
+          class="w-10 h-10 rounded-full bg-[#4A7C59]/10 flex items-center justify-center text-[#4A7C59] font-bold border-2 border-[#4A7C59]/20">
+          AV
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="pt-8 pb-24 px-4 max-w-6xl mx-auto">
+
+    <!-- Dashboard Page -->
+    <div id="page-dashboard" class="page active">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div>
+          <h2 class="font-display text-4xl font-bold text-[#1A3A34] mb-2 leading-tight">Painel de Controle</h2>
+          <p class="text-gray-600">Gestão e monitoramento de riscos arbóreos</p>
+        </div>
+      </div>
+
+      <!-- Bento Grid Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+        <div class="glass-card p-6 border-l-4 border-[#1A3A34]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-[#1A3A34]/5 rounded-lg text-[#1A3A34]">
+              <i data-lucide="files"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total</span>
+          </div>
+          <div id="stat-total" class="text-3xl font-bold text-[#1A3A34]">0</div>
+          <div class="text-xs text-gray-500 mt-1">Avaliações realizadas</div>
+        </div>
+
+        <div class="glass-card p-6 border-l-4 border-[#4A7C59]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-[#4A7C59]/5 rounded-lg text-[#4A7C59]">
+              <i data-lucide="calendar"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Hoje</span>
+          </div>
+          <div id="stat-today" class="text-3xl font-bold text-[#4A7C59]">0</div>
+          <div class="text-xs text-gray-500 mt-1">Novas avaliações</div>
+        </div>
+
+        <div class="glass-card p-6 border-l-4 border-[#D97706]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-[#D97706]/5 rounded-lg text-[#D97706]">
+              <i data-lucide="trending-up"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Mês</span>
+          </div>
+          <div id="stat-month" class="text-3xl font-bold text-[#D97706]">00</div>
+          <div class="text-xs text-gray-500 mt-1">Neste período</div>
+        </div>
+
+        <div class="glass-card p-6 border-l-4 border-[#991B1B]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="p-2 bg-[#991B1B]/5 rounded-lg text-[#991B1B]">
+              <i data-lucide="alert-triangle"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Crítico</span>
+          </div>
+          <div id="stat-high-risk" class="text-3xl font-bold text-[#991B1B]">0</div>
+          <div class="text-xs text-gray-500 mt-1">Risco alto detectado</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        <!-- Distribution and Recent -->
+        <div class="lg:col-span-2 space-y-8">
+          <div class="glass-card p-8">
+            <h3 class="font-display text-xl font-bold text-[#1A3A34] mb-6 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="text-[#D97706]"></i>
+              Distribuição de Risco
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-4 rounded-2xl bg-[#ECFDF5] border border-[#2D6A4F]/20">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold text-[#2D6A4F] uppercase tracking-wider">Baixo</span>
+                  <div class="w-2 h-2 rounded-full bg-[#2D6A4F]"></div>
+                </div>
+                <div id="risk-low-count" class="text-3xl font-bold text-[#2D6A4F]">0</div>
+                <div class="text-[10px] text-[#2D6A4F]/60 mt-1">0-3 pontos</div>
+              </div>
+              <div class="p-4 rounded-2xl bg-[#FFFBEB] border border-[#B45309]/20">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold text-[#B45309] uppercase tracking-wider">Moderado</span>
+                  <div class="w-2 h-2 rounded-full bg-[#B45309]"></div>
+                </div>
+                <div id="risk-moderate-count" class="text-3xl font-bold text-[#B45309]">0</div>
+                <div class="text-[10px] text-[#B45309]/60 mt-1">4-6 pontos</div>
+              </div>
+              <div class="p-4 rounded-2xl bg-[#FEF2F2] border border-[#991B1B]/20">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold text-[#991B1B] uppercase tracking-wider">Alto</span>
+                  <div class="w-2 h-2 rounded-full bg-[#991B1B]"></div>
+                </div>
+                <div id="risk-high-count" class="text-3xl font-bold text-[#991B1B]">0</div>
+                <div class="text-[10px] text-[#991B1B]/60 mt-1">7-10 pontos</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card p-8">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-display text-xl font-bold text-[#1A3A34] flex items-center gap-2">
+                <i data-lucide="clock" class="text-[#D97706]"></i>
+                Avaliações Recentes
+              </h3>
+              <button onclick="app.showHistory()"
+                class="text-sm font-semibold text-[#4A7C59] hover:text-[#1A3A34] transition-colors">Ver tudo →</button>
+            </div>
+            <div id="recent-assessments" class="space-y-4">
+              <p class="text-gray-500 text-center py-8 italic">Nenhuma avaliação realizada ainda</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions & Info -->
+        <div class="space-y-8">
+          <div class="glass-card p-8 bg-[#1A3A34] text-white overflow-hidden relative">
+            <div class="relative z-10">
+              <h3 class="font-display text-2xl font-bold mb-4">Pronto para avaliar?</h3>
+              <p class="text-gray-300 text-sm mb-8 leading-relaxed">Inicie agora uma nova inspeção técnica seguindo os
+                protocolos de segurança.</p>
+              <button onclick="app.newAssessment()"
+                class="w-full bg-[#D97706] hover:bg-[#B45309] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-[#D97706]/20">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                Iniciar Nova Agora
+              </button>
+            </div>
+            <i data-lucide="shield-check" class="absolute -bottom-10 -right-10 w-48 h-48 text-white/5 rotate-12"></i>
+          </div>
+
+          <div class="glass-card p-8 border-t-4 border-[#D97706]">
+            <h3 class="font-display text-lg font-bold text-[#1A3A34] mb-6 flex items-center gap-2">
+              <i data-lucide="lightbulb" class="text-[#D97706]"></i>
+              Dicas Técnicas
+            </h3>
+            <ul class="space-y-5 text-sm text-gray-600">
+              <li class="flex gap-3 items-start">
+                <div class="w-5 h-5 rounded-full bg-[#4A7C59]/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="check" class="w-3 h-3 text-[#4A7C59]"></i>
+                </div>
+                <span>Mantenha o GPS ativo para registrar as coordenadas exatas do indivíduo.</span>
+              </li>
+              <li class="flex gap-3 items-start">
+                <div class="w-5 h-5 rounded-full bg-[#4A7C59]/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="check" class="w-3 h-3 text-[#4A7C59]"></i>
+                </div>
+                <span>Avalie a copa em 360° para não omitir defeitos ocultos.</span>
+              </li>
+              <li class="flex gap-3 items-start">
+                <div class="w-5 h-5 rounded-full bg-[#4A7C59]/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="check" class="w-3 h-3 text-[#4A7C59]"></i>
+                </div>
+                <span>Salve rascunhos periodicamente durante vistorias extensas.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assessment Form Page -->
+    <div id="page-form" class="page">
+      <!-- Progress Steps -->
+      <div class="glass-card p-6 mb-8">
+        <div class="step-indicator-v2">
+          <div class="step-v2-line">
+            <div class="step-v2-progress" id="step-progress"></div>
+          </div>
+          <div class="step-v2 active" data-step="1">1</div>
+          <div class="step-v2" data-step="2">2</div>
+          <div class="step-v2" data-step="3">3</div>
+          <div class="step-v2" data-step="4">4</div>
+          <div class="step-v2" data-step="5">5</div>
+          <div class="step-v2" data-step="6">6</div>
+          <div class="step-v2" data-step="7">7</div>
+        </div>
+        <div
+          class="grid grid-cols-7 gap-1 mt-4 text-[10px] font-bold text-gray-400 uppercase tracking-tighter text-center">
+          <span>Dados</span>
+          <span>Alvos</span>
+          <span>Árvore</span>
+          <span>Diâm.</span>
+          <span>Outros</span>
+          <span>Lista</span>
+          <span>Resumo</span>
+        </div>
+      </div>
+
+      <!-- Risk Score Display (Fixed/Sticky) -->
+      <div class="glass-card p-6 mb-8 sticky top-24 z-40 bg-white/95 border-b-4 border-[#D97706]/20">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <div id="risk-badge" class="risk-badge risk-badge--success">
+              <i id="risk-icon" data-lucide="shield-check" class="w-6 h-6"></i>
+              <div>
+                <div class="text-2xl font-bold leading-none mb-1" id="total-score">0 PONTOS</div>
+                <div id="risk-text" class="text-[10px] font-bold uppercase tracking-widest opacity-70">Risco Baixo</div>
+              </div>
+            </div>
+          </div>
+          <div class="flex-1 w-full max-w-md">
+            <div class="flex justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+              <span>Nível de Perigo</span>
+              <span id="progress-text">0%</span>
+            </div>
+            <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-[#2D6A4F] transition-all duration-500 rounded-full" id="risk-progress-bar"
+                style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="hidden md:grid grid-cols-4 gap-4 pl-6 border-l border-gray-100">
+            <div class="text-center">
+              <div class="text-lg font-bold text-[#1A3A34]" id="score-item1">0</div>
+              <div class="text-[9px] font-bold text-gray-400 uppercase">Alvos</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-[#1A3A34]" id="score-item2">0</div>
+              <div class="text-[9px] font-bold text-gray-400 uppercase">Árvore</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-[#1A3A34]" id="score-item3">0</div>
+              <div class="text-[9px] font-bold text-gray-400 uppercase">Diâm.</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-[#1A3A34]" id="score-item4">0</div>
+              <div class="text-[9px] font-bold text-gray-400 uppercase">Outros</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: Initial Data -->
+      <div id="step-1" class="step-content animate-fade-in-up">
+        <div class="glass-card p-8">
+          <div class="mb-8">
+            <div class="w-12 h-12 rounded-xl bg-[#4A7C59]/10 flex items-center justify-center text-[#4A7C59] mb-4">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-[#1A3A34] mb-2">Identificação</h2>
+            <p class="text-gray-500">Dados fundamentais da vistoria técnica</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Data da Vistoria</label>
+              <div class="relative">
+                <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                <input type="date" id="assessment-date" class="glass-input !pl-12" required>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Hora do Início</label>
+              <div class="relative">
+                <i data-lucide="clock" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                <input type="time" id="assessment-time" class="glass-input !pl-12" required>
+              </div>
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Técnico Responsável</label>
+              <div class="relative">
+                <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                <input type="text" id="assessor-name" class="glass-input !pl-12" placeholder="Nome completo" required>
+              </div>
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Localidade /
+                Endereço</label>
+              <div class="relative">
+                <i data-lucide="map" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                <input type="text" id="location-name" class="glass-input !pl-12"
+                  placeholder="Ex: Praça de Serviços - Bloco A" required>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Latitude</label>
+              <input type="text" id="latitude" class="glass-input bg-gray-50/50" placeholder="0.000000" readonly>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Longitude</label>
+              <input type="text" id="longitude" class="glass-input bg-gray-50/50" placeholder="0.000000" readonly>
+            </div>
+            <div class="md:col-span-2">
+              <button onclick="app.getLocation()" class="w-full glass-btn glass-btn-secondary !py-3 !text-xs">
+                <i data-lucide="crosshair" class="w-4 h-4"></i>
+                Sincronizar Coordenadas GPS
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-12 pt-8 border-t border-gray-100">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-lg bg-[#D97706]/10 flex items-center justify-center text-[#D97706]">
+                <i data-lucide="info" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#1A3A34]">Atributos do Indivíduo</h3>
+                <p class="text-[11px] text-gray-400 uppercase font-bold tracking-widest">Dendrometria básica</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Espécie</label>
+                <input type="text" id="tree-species" class="glass-input" placeholder="Ex: Ipê Amarelo" required>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Altura Est. (m)</label>
+                <input type="number" id="tree-height" class="glass-input" placeholder="12" step="0.5" min="0">
+              </div>
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">DAP (cm)</label>
+                <input type="number" id="tree-dap" class="glass-input" placeholder="45" step="1" min="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end mt-12">
+            <button onclick="app.nextStep()" class="glass-btn !px-12">
+              Próximo: Alvos
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Item 1 - Target Assessment -->
+      <div id="step-2" class="step-content hidden animate-fade-in-up">
+        <div class="glass-card p-8">
+          <div class="mb-8">
+            <div class="w-12 h-12 rounded-xl bg-[#D97706]/10 flex items-center justify-center text-[#D97706] mb-4">
+              <i data-lucide="target"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-[#1A3A34] mb-2">Item 1 - Avaliação dos Alvos</h2>
+            <p class="text-gray-500">Nível de risco baseado na ocupação e tráfego do local</p>
+          </div>
+
+          <div class="p-4 bg-[#1A3A34]/5 border-l-4 border-[#1A3A34] rounded-r-xl mb-8">
+            <div class="flex gap-3">
+              <i data-lucide="info" class="w-5 h-5 text-[#1A3A34] shrink-0"></i>
+              <p class="text-sm text-[#1A3A34]">
+                Considere o tráfego de pedestres, veículos e a presença de estruturas permanentes sob a projeção da
+                copa.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="item1-options">
+            <label class="radio-card p-6 flex items-start gap-4 cursor-pointer group" data-value="3">
+              <input type="radio" name="item1" value="3" class="hidden" checked>
+              <div class="selection-indicator mt-1"></div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold px-2 py-1 bg-[#991B1B]/10 text-[#991B1B] rounded uppercase">3
+                    Pontos</span>
+                  <i data-lucide="users" class="w-5 h-5 text-[#991B1B]/40 group-[.selected]:text-[#991B1B]"></i>
+                </div>
+                <h4 class="font-bold text-[#1A3A34] mb-1">Risco Alto</h4>
+                <p class="text-[11px] text-gray-500 leading-relaxed">Pessoas presentes frequentemente. Parques, calçadas
+                  centrais, escolas.</p>
+              </div>
+            </label>
+
+            <label class="radio-card p-6 flex items-start gap-4 cursor-pointer group" data-value="2">
+              <input type="radio" name="item1" value="2" class="hidden">
+              <div class="selection-indicator mt-1"></div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold px-2 py-1 bg-[#D97706]/10 text-[#D97706] rounded uppercase">2
+                    Pontos</span>
+                  <i data-lucide="car" class="w-5 h-5 text-[#D97706]/40 group-[.selected]:text-[#D97706]"></i>
+                </div>
+                <h4 class="font-bold text-[#1A3A34] mb-1">Risco Moderado</h4>
+                <p class="text-[11px] text-gray-500 leading-relaxed">Presença eventual de pessoas ou bens.
+                  Estacionamentos, áreas residenciais.</p>
+              </div>
+            </label>
+
+            <label class="radio-card p-6 flex items-start gap-4 cursor-pointer group" data-value="1">
+              <input type="radio" name="item1" value="1" class="hidden">
+              <div class="selection-indicator mt-1"></div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold px-2 py-1 bg-[#4A7C59]/10 text-[#4A7C59] rounded uppercase">1
+                    Ponto</span>
+                  <i data-lucide="home" class="w-5 h-5 text-[#4A7C59]/40 group-[.selected]:text-[#4A7C59]"></i>
+                </div>
+                <h4 class="font-bold text-[#1A3A34] mb-1">Risco a Bens</h4>
+                <p class="text-[11px] text-gray-500 leading-relaxed">Apenas bens materiais sem tráfego de pessoas.
+                  Muros, fiações isoladas.</p>
+              </div>
+            </label>
+
+            <label class="radio-card p-6 flex items-start gap-4 cursor-pointer group" data-value="0">
+              <input type="radio" name="item1" value="0" class="hidden">
+              <div class="selection-indicator mt-1"></div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold px-2 py-1 bg-gray-100 text-gray-500 rounded uppercase">0
+                    Pontos</span>
+                  <i data-lucide="shield" class="w-5 h-5 text-gray-300 group-[.selected]:text-gray-500"></i>
+                </div>
+                <h4 class="font-bold text-[#1A3A34] mb-1">Sem Risco</h4>
+                <p class="text-[11px] text-gray-500 leading-relaxed">Áreas desabitadas e sem bens de valor. Matas
+                  virgens, terrenos baldios isolados.</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="flex justify-between mt-12 pt-8 border-t border-gray-100">
+            <button onclick="app.prevStep()" class="glass-btn glass-btn-secondary !px-8">
+              <i data-lucide="arrow-left"></i>
+              Anterior
+            </button>
+            <button onclick="app.nextStep()" class="glass-btn !px-12">
+              Avançar
+              <i data-lucide="arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Item 2 - Tree Condition -->
+      <div id="step-3" class="step-content hidden animate-fade-in-up">
+        <div class="glass-card p-8">
+          <div class="mb-8">
+            <div class="w-12 h-12 rounded-xl bg-[#4A7C59]/10 flex items-center justify-center text-[#4A7C59] mb-4">
+              <i data-lucide="tree-pine"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-[#1A3A34] mb-2">Item 2 - Condição da Árvore</h2>
+            <p class="text-gray-500">Marque todas as anomalias observadas (sistema pontua pelo maior valor)</p>
+          </div>
+
+          <div
+            class="p-4 bg-[#D97706]/5 border-l-4 border-[#D97706] rounded-r-xl mb-8 flex justify-between items-center">
+            <div class="flex gap-3">
+              <i data-lucide="alert-circle" class="w-5 h-5 text-[#D97706] shrink-0"></i>
+              <p class="text-xs text-[#1A3A34]">
+                <strong>Nota Técnica:</strong> A pontuação máxima deste item é 4, independentemente do número de
+                defeitos selecionados.
+              </p>
+            </div>
+            <button onclick="app.clearItem2Defects()"
+              class="text-[10px] font-bold text-[#991B1B] hover:underline uppercase tracking-wider">
+              Limpar Seleção
+            </button>
+          </div>
+
+          <!-- Risk Categories -->
+          <div class="space-y-10">
+            <!-- Critical Risk (4 Points) -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-2 rounded-full bg-[#991B1B]"></div>
+                <h3 class="text-[10px] font-bold text-[#991B1B] uppercase tracking-[0.2em]">Risco Crítico (4 Pontos)
+                </h3>
+              </div>
+              <div class="grid grid-cols-1 gap-3" id="item2-high4">
+                <label class="checkbox-card p-5 border-l-4 border-[#991B1B] group item2-defect" data-value="4">
+                  <input type="checkbox" name="item2" value="4" data-score="4" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Degradação Severa do Tronco</h4>
+                      <p class="text-[11px] text-gray-500 leading-relaxed">Podridão, cavidades ou fissuras profundas
+                        comprometendo mais de 30% da circunferência.</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- High Risk (3 Points) -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-2 rounded-full bg-[#D97706]"></div>
+                <h3 class="text-[10px] font-bold text-[#D97706] uppercase tracking-[0.2em]">Risco Alto (3 Pontos)</h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item2-high3">
+                <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item2-defect" data-value="3">
+                  <input type="checkbox" name="item2" value="3" data-score="3" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Defeito Significativo (>40%)</h4>
+                      <p class="text-[11px] text-gray-500">Comprometimento de 40% ou mais da área da seção transversal.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item2-defect" data-value="3">
+                  <input type="checkbox" name="item2" value="3" data-score="3" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Copa Severamente Danificada</h4>
+                      <p class="text-[11px] text-gray-500">Mais de 30% da estrutura da copa com quebras ou podridão.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item2-defect" data-value="3">
+                  <input type="checkbox" name="item2" value="3" data-score="3" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">União de Galhos com Fissura</h4>
+                      <p class="text-[11px] text-gray-500">Codominância ou união fraca com rachaduras visíveis na base.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Moderate Risk (2 Points) -->
+            <div id="item2-moderate-section">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-2 rounded-full bg-[#4A7C59]"></div>
+                <h3 class="text-[10px] font-bold text-[#4A7C59] uppercase tracking-[0.2em]">Risco Moderado (2 Pontos)
+                </h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item2-moderate">
+                <label class="checkbox-card p-5 border-l-4 border-[#4A7C59] group item2-defect" data-value="2">
+                  <input type="checkbox" name="item2" value="2" data-score="2" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Defeito Moderado (30-40%)</h4>
+                      <p class="text-[11px] text-gray-500">Comprometimento entre 30% e 40% da circunferência total.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#4A7C59] group item2-defect" data-value="2">
+                  <input type="checkbox" name="item2" value="2" data-score="2" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Copa Danificada (10-30%)</h4>
+                      <p class="text-[11px] text-gray-500">Estrutura quebradiça ou podre atingindo parte da copa.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#4A7C59] group item2-defect" data-value="2">
+                  <input type="checkbox" name="item2" value="2" data-score="2" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Galhos Mortos Estruturais</h4>
+                      <p class="text-[11px] text-gray-500">Ramos com diâmetro superior a 10cm sem vitalidade.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#4A7C59] group item2-defect" data-value="2">
+                  <input type="checkbox" name="item2" value="2" data-score="2" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Inclinação do Tronco</h4>
+                      <p class="text-[11px] text-gray-500">Desvio vertical pronunciado do eixo do tronco.</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Low Risk (1 Point) -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Risco Baixo (1 Ponto)</h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item2-low">
+                <label class="checkbox-card p-5 border-l-4 border-gray-100 group item2-defect" data-value="1">
+                  <input type="checkbox" name="item2" value="1" data-score="1" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Defeito Leve (<30%)< /h4>
+                          <p class="text-[11px] text-gray-500">Sinais superficiais sem comprometimento estrutural grave.
+                          </p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-gray-100 group item2-defect" data-value="1">
+                  <input type="checkbox" name="item2" value="1" data-score="1" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Copa Levemente Danificada</h4>
+                      <p class="text-[11px] text-gray-500">Menos de 10% da copa apresenta defeitos visíveis.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-gray-100 group item2-defect" data-value="1">
+                  <input type="checkbox" name="item2" value="1" data-score="1" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Galhos Secos Pequenos</h4>
+                      <p class="text-[11px] text-gray-500">Ponteiras e galhos finos sem risco de queda perigosa.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-gray-100 group item2-defect" data-value="0">
+                  <input type="checkbox" name="item2" value="0" data-score="0" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Condição Saudável</h4>
+                      <p class="text-[11px] text-gray-500">Indivíduo vigoroso sem anomalias detectáveis nesta vistoria.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-between mt-12 pt-8 border-t border-gray-100">
+            <button onclick="app.prevStep()" class="glass-btn glass-btn-secondary !px-8">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              Anterior
+            </button>
+            <button onclick="app.nextStep()" class="glass-btn !px-12">
+              Avançar
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Item 3 - Diameter -->
+      <div id="step-4" class="step-content hidden animate-fade-in-up">
+        <div class="glass-card p-8">
+          <div class="mb-8">
+            <div class="w-12 h-12 rounded-xl bg-[#1A3A34]/5 flex items-center justify-center text-[#1A3A34] mb-4">
+              <i data-lucide="ruler"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-[#1A3A34] mb-2">Item 3 - Diâmetro</h2>
+            <p class="text-gray-500">Diâmetro da parte defeituosa ou galho comprometido</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" id="item3-options">
+            <label class="radio-card p-6 flex flex-col items-center text-center cursor-pointer group" data-value="3">
+              <input type="radio" name="item3" value="3" class="hidden" checked>
+              <div class="selection-indicator absolute top-4 right-4"></div>
+              <div
+                class="w-12 h-12 rounded-full bg-[#991B1B]/10 flex items-center justify-center text-[#991B1B] mb-4 group-[.selected]:bg-[#991B1B] group-[.selected]:text-white transition-all">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+              </div>
+              <span class="text-[10px] font-bold text-[#991B1B] uppercase tracking-widest mb-1">3 Pontos</span>
+              <h4 class="font-bold text-[#1A3A34] mb-2">> 51 cm</h4>
+              <p class="text-[10px] text-gray-400 uppercase font-bold">Risco Crítico</p>
+            </label>
+
+            <label class="radio-card p-6 flex flex-col items-center text-center cursor-pointer group" data-value="2">
+              <input type="radio" name="item3" value="2" class="hidden">
+              <div class="selection-indicator absolute top-4 right-4"></div>
+              <div
+                class="w-12 h-12 rounded-full bg-[#D97706]/10 flex items-center justify-center text-[#D97706] mb-4 group-[.selected]:bg-[#D97706] group-[.selected]:text-white transition-all">
+                <i data-lucide="activity" class="w-6 h-6"></i>
+              </div>
+              <span class="text-[10px] font-bold text-[#D97706] uppercase tracking-widest mb-1">2 Pontos</span>
+              <h4 class="font-bold text-[#1A3A34] mb-2">10 - 51 cm</h4>
+              <p class="text-[10px] text-gray-400 uppercase font-bold">Risco Médio</p>
+            </label>
+
+            <label class="radio-card p-6 flex flex-col items-center text-center cursor-pointer group" data-value="1">
+              <input type="radio" name="item3" value="1" class="hidden">
+              <div class="selection-indicator absolute top-4 right-4"></div>
+              <div
+                class="w-12 h-12 rounded-full bg-[#4A7C59]/10 flex items-center justify-center text-[#4A7C59] mb-4 group-[.selected]:bg-[#4A7C59] group-[.selected]:text-white transition-all">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+              </div>
+              <span class="text-[10px] font-bold text-[#4A7C59] uppercase tracking-widest mb-1">1 Ponto</span>
+              <h4 class="font-bold text-[#1A3A34] mb-2">
+                < 10 cm</h4>
+                  <p class="text-[10px] text-gray-400 uppercase font-bold">Risco Baixo</p>
+            </label>
+          </div>
+
+          <div class="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 mb-10">
+            <label class="block text-[10px] font-bold text-[#1A3A34] uppercase tracking-widest mb-4">Medição Precisa
+              (cm)</label>
+            <div class="relative max-w-xs">
+              <input type="number" id="diameter-exact" class="glass-input !py-4 pr-12 font-bold text-lg"
+                placeholder="0.0">
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-300">CM</span>
+            </div>
+            <p class="mt-3 text-[11px] text-gray-400 italic">Opcional: Informe o valor exato para o relatório técnico.
+            </p>
+          </div>
+
+          <div class="flex justify-between pt-8 border-t border-gray-100">
+            <button onclick="app.prevStep()" class="glass-btn glass-btn-secondary !px-8">
+              <i data-lucide="arrow-left"></i>
+              Anterior
+            </button>
+            <button onclick="app.nextStep()" class="glass-btn !px-12">
+              Avançar
+              <i data-lucide="arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Item 4 - Fatores Adicionais -->
+      <div id="step-5" class="step-content hidden animate-fade-in-up">
+        <div class="glass-card p-8">
+          <div class="mb-8">
+            <div class="w-12 h-12 rounded-xl bg-[#4A7C59]/10 flex items-center justify-center text-[#4A7C59] mb-4">
+              <i data-lucide="layers"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-[#1A3A34] mb-2">Item 4 - Fatores Adicionais</h2>
+            <p class="text-gray-500">Agravantes internos ou externos (máximo 2 pontos)</p>
+          </div>
+
+          <div
+            class="p-4 bg-[#1A3A34]/5 border-l-4 border-[#1A3A34] rounded-r-xl mb-8 flex justify-between items-center">
+            <div class="flex gap-3">
+              <i data-lucide="info" class="w-5 h-5 text-[#1A3A34] shrink-0"></i>
+              <p class="text-xs text-[#1A3A34]">
+                <strong>Nota:</strong> A pontuação final deste item será limitada a 2 pontos totais.
+              </p>
+            </div>
+            <button onclick="app.clearItem4Factors()"
+              class="text-[10px] font-bold text-[#991B1B] hover:underline uppercase tracking-wider">
+              Limpar Todos
+            </button>
+          </div>
+
+          <div class="space-y-10">
+            <!-- Critical Factors (2 Points) -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-2 rounded-full bg-[#991B1B]"></div>
+                <h3 class="text-[10px] font-bold text-[#991B1B] uppercase tracking-[0.2em]">Agravantes Críticos (2
+                  Pontos)</h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item4-high">
+                <label class="checkbox-card p-5 border-l-4 border-[#991B1B] group item4-factor" data-value="2">
+                  <input type="checkbox" name="item4" value="2" data-score="2" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Histórico de Falha Parcial</h4>
+                      <p class="text-[11px] text-gray-500 leading-relaxed">Árvore já apresentou queda de galhos
+                        volumosos ou partes do tronco.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#991B1B] group item4-factor" data-value="2">
+                  <input type="checkbox" name="item4" value="2" data-score="2" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Movimentação Detectável</h4>
+                      <p class="text-[11px] text-gray-500 leading-relaxed">Instabilidade severa, inclinação progressiva
+                        ou movimentação em ventos.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#991B1B] group item4-factor" data-value="2">
+                  <input type="checkbox" name="item4" value="2" data-score="2" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Clima Extremo Iminente</h4>
+                      <p class="text-[11px] text-gray-500 leading-relaxed">Previsão de tempestades severas ou ventos
+                        atípicos para a região.</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Elevated Factors (1 Point) -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-2 rounded-full bg-[#D97706]"></div>
+                <h3 class="text-[10px] font-bold text-[#D97706] uppercase tracking-[0.2em]">Agravantes Moderados (1
+                  Ponto)</h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item4-moderate">
+                <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item4-factor" data-value="1">
+                  <input type="checkbox" name="item4" value="1" data-score="1" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Histórico de Poda Drástica</h4>
+                      <p class="text-[11px] text-gray-500">Topping, poda severa de raízes ou remoção excessiva de copa.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item4-factor" data-value="1">
+                  <input type="checkbox" name="item4" value="1" data-score="1" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Intercorrências Recentes</h4>
+                      <p class="text-[11px] text-gray-500">Fogo, inundações ou impactos mecânicos acidentais recentes.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item4-factor" data-value="1">
+                  <input type="checkbox" name="item4" value="1" data-score="1" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Obras no Entorno</h4>
+                      <p class="text-[11px] text-gray-500">Escavações, compactação do solo ou impermeabilização recente.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+                <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item4-factor" data-value="1">
+                  <input type="checkbox" name="item4" value="1" data-score="1" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Pragas ou Doenças Ativas</h4>
+                      <p class="text-[11px] text-gray-500">Presença visível de fungos xilófagos, cupins ou patógenos.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- No Risk (0 Points) -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Sem Fatores Adicionais</h3>
+              </div>
+              <div class="grid grid-cols-1 gap-3" id="item4-none">
+                <label class="checkbox-card p-5 border-l-4 border-gray-100 group item4-factor" data-value="0">
+                  <input type="checkbox" name="item4" value="0" data-score="0" class="hidden">
+                  <div class="flex items-start gap-4">
+                    <div class="selection-indicator"></div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-[#1A3A34] mb-1">Indivíduo sem Agravantes</h4>
+                      <p class="text-[11px] text-gray-500">Não foram identificados fatores externos que elevem o
+                        potencial de risco.</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-12 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 mb-10">
+            <label class="block text-[10px] font-bold text-[#1A3A34] uppercase tracking-widest mb-4">Observações
+              Técnicas</label>
+            <textarea id="item4-observations" class="glass-input min-h-[120px] resize-none"
+              placeholder="Descreva detalhadamente quaisquer outros fatores contextuais..."></textarea>
+          </div>
+
+          <div class="flex justify-between pt-8 border-t border-gray-100">
+            <button onclick="app.prevStep()" class="glass-btn glass-btn-secondary !px-8">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              Anterior
+            </button>
+            <button onclick="app.nextStep()" class="glass-btn !px-12">
+              Avançar
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: Checklist -->
+      <div id="step-6" class="step-content hidden animate-fade-in-up">
+        <div class="glass-card p-8">
+          <div class="mb-8">
+            <div class="w-12 h-12 rounded-xl bg-[#D97706]/10 flex items-center justify-center text-[#D97706] mb-4">
+              <i data-lucide="clipboard-check"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-[#1A3A34] mb-2">Checklist de Campo</h2>
+            <p class="text-gray-500">Verificações complementares de segurança e saúde</p>
+          </div>
+
+          <div class="flex gap-4 mb-8">
+            <button onclick="app.checkAll(true)"
+              class="text-[10px] font-bold text-[#4A7C59] hover:underline uppercase tracking-wider">
+              Marcar Todos
+            </button>
+            <button onclick="app.checkAll(false)"
+              class="text-[10px] font-bold text-[#991B1B] hover:underline uppercase tracking-wider">
+              Limpar Todos
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Roots -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                <i data-lucide="sprout" class="w-4 h-4 text-[#4A7C59]"></i>
+                <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Sistema Radicular</h4>
+              </div>
+              <div class="space-y-2" id="checklist-roots">
+                <label class="checkbox-card p-4 group">
+                  <input type="checkbox" value="raizes_podridao" class="hidden">
+                  <div class="flex items-center gap-3">
+                    <div class="selection-indicator"></div>
+                    <span class="text-sm text-gray-700">Podridão e degradação</span>
+                  </div>
+                </label>
+                <label class="checkbox-card p-4 group">
+                  <input type="checkbox" value="raizes_expostas" class="hidden">
+                  <div class="flex items-center gap-3">
+                    <div class="selection-indicator"></div>
+                    <span class="text-sm text-gray-700">Raízes expostas/danificadas</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Trunk -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                <i data-lucide="box" class="w-4 h-4 text-[#4A7C59]"></i>
+                <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Tronco e Estrutura</h4>
+              </div>
+              <div class="space-y-2" id="checklist-trunk">
+                <label class="checkbox-card p-4 group">
+                  <input type="checkbox" value="fissuras_cavidades" class="hidden">
+                  <div class="flex items-center gap-3">
+                    <div class="selection-indicator"></div>
+                    <span class="text-sm text-gray-700">Fissuras e cavidades</span>
+                  </div>
+                </label>
+                <label class="checkbox-card p-4 group">
+                  <input type="checkbox" value="fungos_base" class="hidden">
+                  <div class="flex items-center gap-3">
+                    <div class="selection-indicator"></div>
+                    <span class="text-sm text-gray-700">Fungos na base</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Surroundings -->
+            <div class="md:col-span-2 space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-[#991B1B]"></i>
+                <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Riscos ao Entorno</h4>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="checklist-surroundings">
+                <label class="checkbox-card p-4 group">
+                  <input type="checkbox" value="edificacoes" class="hidden">
+                  <div class="flex items-center gap-3">
+                    <div class="selection-indicator"></div>
+                    <span class="text-sm text-gray-700">Edificações</span>
+                  </div>
+                </label>
+                <label class="checkbox-card p-4 group">
+                  <input type="checkbox" value="fios_energizados" class="hidden">
+                  <div class="flex items-center gap-3">
+                    <div class="selection-indicator"></div>
+                    <span class="text-sm text-gray-700">Rede Elétrica</span>
+                  </div>
+                </label>
+                <label class="checkbox-card p-4 group">
+                  <input type="checkbox" value="risco_pessoas" class="hidden">
+                  <div class="flex items-center gap-3">
+                    <div class="selection-indicator"></div>
+                    <span class="text-sm text-gray-700">Alta Circulação</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-12 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 mb-10">
+            <label class="block text-[10px] font-bold text-[#1A3A34] uppercase tracking-widest mb-4">Notas
+              Adicionais</label>
+            <textarea id="observations" class="glass-input min-h-[120px] resize-none"
+              placeholder="Observações gerais sobre a vistoria..."></textarea>
+          </div>
+
+          <div class="flex justify-between pt-8 border-t border-gray-100">
+            <button onclick="app.prevStep()" class="glass-btn glass-btn-secondary !px-8">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              Anterior
+            </button>
+            <button onclick="app.nextStep()" class="glass-btn !px-12">
+              Ver Resumo
+              <i data-lucide="file-text" class="w-4 h-4 ml-2"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7: Summary -->
+      <div id="step-7" class="step-content hidden animate-fade-in-up">
+        <div class="glass-card p-8">
+          <div class="mb-8">
+            <div class="w-12 h-12 rounded-xl bg-[#1A3A34]/10 flex items-center justify-center text-[#1A3A34] mb-4">
+              <i data-lucide="file-check"></i>
+            </div>
+            <h2 class="font-display text-3xl font-bold text-[#1A3A34] mb-2">Resumo da Avaliação</h2>
+            <p class="text-gray-500">Revise os dados e gere o relatório técnico</p>
+          </div>
+
+          <!-- Final Score Card -->
+          <div
+            class="p-8 bg-[#1A3A34]/5 rounded-3xl border border-[#1A3A34]/10 mb-10 text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-[#4A7C59]/10 rounded-full blur-3xl"></div>
+            <div class="relative">
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] mb-4 block">Classificação de
+                Risco</span>
+              <div id="final-risk-badge" class="risk-badge mx-auto mb-6 scale-110">
+                <span class="text-2xl">🟢</span>
+                <div>
+                  <div class="text-2xl font-bold" id="final-total-score">0 PONTOS</div>
+                  <div class="text-xs font-bold opacity-80">RISCO BAIXO</div>
+                </div>
+              </div>
+              <div class="risk-progress h-2 max-w-sm mx-auto rounded-full bg-gray-200 overflow-hidden">
+                <div class="risk-progress-bar h-full bg-[#4A7C59] transition-all duration-1000" id="final-risk-progress"
+                  style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div class="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm">
+              <div class="flex items-center gap-3 mb-4 pb-3 border-b border-gray-50">
+                <i data-lucide="map-pin" class="w-4 h-4 text-[#4A7C59]"></i>
+                <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Localização</h4>
+              </div>
+              <div class="space-y-3 text-sm">
+                <div class="flex justify-between"><span class="text-gray-400">Local:</span> <span id="summary-location"
+                    class="font-bold text-[#1A3A34]">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Data/Hora:</span> <span id="summary-date"
+                    class="font-bold text-[#1A3A34]">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Avaliador:</span> <span
+                    id="summary-assessor" class="font-bold text-[#1A3A34]">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Coords:</span> <span id="summary-coords"
+                    class="font-mono text-xs text-gray-500">-</span></div>
+              </div>
+            </div>
+
+            <div class="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm">
+              <div class="flex items-center gap-3 mb-4 pb-3 border-b border-gray-50">
+                <i data-lucide="tree-pine" class="w-4 h-4 text-[#4A7C59]"></i>
+                <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Identificação</h4>
+              </div>
+              <div class="space-y-3 text-sm">
+                <div class="flex justify-between"><span class="text-gray-400">Espécie:</span> <span id="summary-species"
+                    class="font-bold text-[#1A3A34]">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Altura:</span> <span id="summary-height"
+                    class="font-bold text-[#1A3A34]">-</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">DAP:</span> <span id="summary-dap"
+                    class="font-bold text-[#1A3A34]">-</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Score Breakdown -->
+          <div class="mb-10">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 px-2">Detalhamento da Pontuação
+            </h4>
+            <div class="space-y-3">
+              <div
+                class="p-4 rounded-xl bg-gray-50 flex justify-between items-center group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#1A3A34] shadow-sm">
+                    <i data-lucide="target" class="w-4 h-4"></i>
+                  </div>
+                  <span class="font-bold text-[#1A3A34] text-sm">Item 1 - Avaliação dos Alvos</span>
+                </div>
+                <span class="font-display font-bold text-lg text-[#1A3A34]" id="summary-item1">0 pts</span>
+              </div>
+
+              <div
+                class="p-4 rounded-xl bg-gray-50 group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
+                <div class="flex justify-between items-center mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#991B1B] shadow-sm">
+                      <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                    </div>
+                    <span class="font-bold text-[#1A3A34] text-sm">Item 2 - Condição da Árvore</span>
+                  </div>
+                  <span class="font-display font-bold text-lg text-[#1A3A34]" id="summary-item2">0 pts</span>
+                </div>
+                <div id="summary-item2-defects" class="pl-11 space-y-1 text-xs text-gray-500">
+                  <!-- JS Populated -->
+                </div>
+              </div>
+
+              <div
+                class="p-4 rounded-xl bg-gray-50 flex justify-between items-center group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#1A3A34] shadow-sm">
+                    <i data-lucide="ruler" class="w-4 h-4"></i>
+                  </div>
+                  <span class="font-bold text-[#1A3A34] text-sm">Item 3 - Diâmetro Afetado</span>
+                </div>
+                <span class="font-display font-bold text-lg text-[#1A3A34]" id="summary-item3">0 pts</span>
+              </div>
+
+              <div
+                class="p-4 rounded-xl bg-gray-50 group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100">
+                <div class="flex justify-between items-center mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#D97706] shadow-sm">
+                      <i data-lucide="layers" class="w-4 h-4"></i>
+                    </div>
+                    <span class="font-bold text-[#1A3A34] text-sm">Item 4 - Fatores Adicionais</span>
+                  </div>
+                  <span class="font-display font-bold text-lg text-[#1A3A34]" id="summary-item4">0 pts</span>
+                </div>
+                <div id="summary-item4-details" class="pl-11 space-y-1 text-xs text-gray-500">
+                  <!-- JS Populated -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-col sm:flex-row gap-4 justify-between pt-10 border-t border-gray-100">
+            <button onclick="app.prevStep()" class="glass-btn glass-btn-secondary !px-8">
+              <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+              Revisar Dados
+            </button>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button onclick="app.saveDraft()" class="glass-btn glass-btn-secondary !bg-white">
+                <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                Salvar Rascunho
+              </button>
+              <button onclick="app.generatePDF()"
+                class="glass-btn !bg-red-600 !text-white !border-red-600 shadow-lg shadow-red-200">
+                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
+                Gerar Relatório PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Page -->
+    <div id="page-history" class="page">
+      <div class="mb-8">
+        <h2 class="font-display text-4xl font-bold text-[#1e4054] mb-2">Histórico de Avaliações</h2>
+        <p class="text-gray-600">Todas as avaliações realizadas</p>
+      </div>
+
+      <div class="glass-card p-6">
+        <div class="flex flex-wrap gap-4 mb-6">
+          <input type="text" id="history-search" class="glass-input max-w-[300px]"
+            placeholder="🔍 Buscar por local ou espécie..." onkeyup="app.filterHistory()">
+          <select id="history-filter-risk" class="glass-input max-w-[200px]" onchange="app.filterHistory()">
+            <option value="">Todos os riscos</option>
+            <option value="low">Risco Baixo</option>
+            <option value="moderate">Risco Moderado</option>
+            <option value="high">Risco Alto</option>
+          </select>
+        </div>
+
+        <div id="history-list" class="space-y-4">
+          <p class="text-gray-500 text-center py-12">Nenhuma avaliação no histórico</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  </main>
+
+  <script>
+    // Application State
+    const app = {
+      currentStep: 1,
+      totalSteps: 7,
+      assessment: {
+        id: null,
+        date: '',
+        time: '',
+        assessor: '',
+        location: '',
+        latitude: '',
+        longitude: '',
+        species: '',
+        height: '',
+        dap: '',
+        item1: 3,
+        item2: 0,
+        item3: 3,
+        item4: 0,
+        diameterExact: '',
+        checklist: {},
+        observations: '',
+        createdAt: null
+      },
+      history: [],
+
+      init() {
+        // Set current date and time
+        const now = new Date();
+        document.getElementById('assessment-date').value = now.toISOString().split('T')[0];
+        document.getElementById('assessment-time').value = now.toTimeString().slice(0, 5);
+
+        // Load saved assessments
+        this.loadHistory();
+        this.updateDashboard();
+
+        // Setup event listeners
+        this.setupEventListeners();
+
+        // Initialize scores
+        this.calculateScores();
+
+        // Setup FAB button
+        const fabButton = document.getElementById('fab-new-assessment');
+        if (fabButton) {
+          fabButton.addEventListener('click', () => this.newAssessment());
+        }
+      },
+
+      setupEventListeners() {
+        // Radio card selection (Item 1 and Item 3)
+        document.querySelectorAll('.radio-card input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            this.handleRadioSelection(radio);
+          });
+        });
+
+        // Item 2 defect checkboxes (special handling for max score calculation)
+        document.querySelectorAll('.item2-defect input[type="checkbox"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            checkbox.closest('.item2-defect').classList.toggle('checked', checkbox.checked);
+            this.calculateItem2Score();
+          });
+        });
+
+        // Item 4 factor checkboxes (special handling for max score calculation)
+        document.querySelectorAll('.item4-factor input[type="checkbox"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            checkbox.closest('.item4-factor').classList.toggle('checked', checkbox.checked);
+            this.calculateItem4Score();
+          });
+        });
+
+        // Regular Checkbox card selection (for checklist items)
+        document.querySelectorAll('.checkbox-card:not(.item2-defect) input[type="checkbox"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            checkbox.closest('.checkbox-card').classList.toggle('checked', checkbox.checked);
+            this.calculateScores();
+          });
+        });
+
+        // Input changes
+        document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea').forEach(input => {
+          input.addEventListener('change', () => this.updateAssessmentData());
+          input.addEventListener('input', () => this.updateAssessmentData());
+        });
+
+        // Radio changes
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', () => {
+            this.handleRadioSelection(radio);
+          });
+        });
+
+        // Checkbox changes
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+          checkbox.addEventListener('change', () => {
+            checkbox.closest('.checkbox-card').classList.toggle('checked', checkbox.checked);
+            this.calculateScores();
+          });
+        });
+      },
+
+      handleRadioSelection(input) {
+        const name = input.name;
+        const value = parseInt(input.value);
+
+        // Update visual selection - remove selected from all in group, add to checked
+        document.querySelectorAll(\`input[name="\${name}"]\`).forEach(r => {
+          r.closest('.radio-card').classList.remove('selected');
+        });
+        input.closest('.radio-card').classList.add('selected');
+
+        // Update assessment data
+        if (name === 'item1') this.assessment.item1 = value;
+        if (name === 'item3') this.assessment.item3 = value;
+
+        this.calculateScores();
+      },
+
+      calculateItem2Score() {
+        // Get all checked checkboxes from Item 2
+        const checkedDefects = document.querySelectorAll('.item2-defect input[type="checkbox"]:checked');
+
+        if (checkedDefects.length === 0) {
+          this.assessment.item2 = 0;
+        } else {
+          // Calculate maximum score from selected defects
+          let maxScore = 0;
+          checkedDefects.forEach(checkbox => {
+            const score = parseInt(checkbox.dataset.score) || 0;
+            if (score > maxScore) {
+              maxScore = score;
+            }
+          });
+          this.assessment.item2 = maxScore;
+        }
+
+        this.calculateScores();
+      },
+
+      calculateItem4Score() {
+        // Get all checked checkboxes from Item 4
+        const checkedFactors = document.querySelectorAll('.item4-factor input[type="checkbox"]:checked');
+
+        if (checkedFactors.length === 0) {
+          this.assessment.item4 = 0;
+        } else {
+          // Calculate maximum score from selected factors
+          let maxScore = 0;
+          checkedFactors.forEach(checkbox => {
+            const score = parseInt(checkbox.dataset.score) || 0;
+            if (score > maxScore) {
+              maxScore = score;
+            }
+          });
+          this.assessment.item4 = maxScore;
+        }
+
+        this.calculateScores();
+      },
+
+      updateAssessmentData() {
+        this.assessment.date = document.getElementById('assessment-date')?.value || '';
+        this.assessment.time = document.getElementById('assessment-time')?.value || '';
+        this.assessment.assessor = document.getElementById('assessor-name')?.value || '';
+        this.assessment.location = document.getElementById('location-name')?.value || '';
+        this.assessment.latitude = document.getElementById('latitude')?.value || '';
+        this.assessment.longitude = document.getElementById('longitude')?.value || '';
+        this.assessment.species = document.getElementById('tree-species')?.value || '';
+        this.assessment.height = document.getElementById('tree-height')?.value || '';
+        this.assessment.dap = document.getElementById('tree-dap')?.value || '';
+        this.assessment.diameterExact = document.getElementById('diameter-exact')?.value || '';
+        this.assessment.observations = document.getElementById('observations')?.value || '';
+
+        // Update checklist (excluding Item 2 defects and Item 4 factors)
+        this.assessment.checklist = {};
+        document.querySelectorAll('.checkbox-card:not(.item2-defect):not(.item4-factor) input[type="checkbox"]').forEach(cb => {
+          this.assessment.checklist[cb.value] = cb.checked;
+        });
+      },
+
+      calculateScores() {
+        this.updateAssessmentData();
+
+        const total = this.assessment.item1 + this.assessment.item2 + this.assessment.item3 + this.assessment.item4;
+        const percentage = (total / 10) * 100;
+
+        // Update score displays
+        document.getElementById('score-item1').textContent = this.assessment.item1;
+        document.getElementById('score-item2').textContent = this.assessment.item2;
+        document.getElementById('score-item3').textContent = this.assessment.item3;
+        document.getElementById('score-item4').textContent = this.assessment.item4;
+
+        // Update total and risk level
+        const riskBadge = document.getElementById('risk-badge');
+        const totalScore = document.getElementById('total-score');
+        const progressBar = document.getElementById('risk-progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const riskIcon = document.getElementById('risk-icon');
+        const riskLabel = document.getElementById('risk-text');
+
+        if (totalScore) totalScore.textContent = \`\${total} PONTOS\`;
+        if (progressBar) progressBar.style.width = \`\${percentage}%\`;
+        if (progressText) progressText.textContent = \`\${Math.round(percentage)}%\`;
+
+        if (!riskBadge || !riskIcon || !riskLabel) return { total, percentage };
+
+        // Risk level styling & content update
+        riskBadge.className = 'risk-badge';
+
+        if (total >= 7) {
+          riskBadge.classList.add('risk-badge--danger');
+          riskIcon.setAttribute('data-lucide', 'alert-octagon');
+          riskLabel.textContent = 'RISCO ALTO';
+        } else if (total >= 4) {
+          riskBadge.classList.add('risk-badge--warning');
+          riskIcon.setAttribute('data-lucide', 'alert-triangle');
+          riskLabel.textContent = 'RISCO MODERADO';
+        } else {
+          riskBadge.classList.add('risk-badge--success');
+          riskIcon.setAttribute('data-lucide', 'shield-check');
+          riskLabel.textContent = 'RISCO BAIXO';
+        }
+
+        // Refresh icons
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+
+        return { total, percentage };
+      },
+
+      nextStep() {
+        if (this.currentStep < this.totalSteps) {
+          document.getElementById(\`step-\${this.currentStep}\`).classList.add('hidden');
+          this.currentStep++;
+          document.getElementById(\`step-\${this.currentStep}\`).classList.remove('hidden');
+          this.updateStepIndicator();
+
+          if (this.currentStep === this.totalSteps) {
+            this.updateSummary();
+          }
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      },
+
+      prevStep() {
+        if (this.currentStep > 1) {
+          document.getElementById(\`step-\${this.currentStep}\`).classList.add('hidden');
+          this.currentStep--;
+          document.getElementById(\`step-\${this.currentStep}\`).classList.remove('hidden');
+          this.updateStepIndicator();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      },
+
+      updateStepIndicator() {
+        const progress = ((this.currentStep - 1) / (this.totalSteps - 1)) * 100;
+        const progressEl = document.getElementById('step-progress');
+        if (progressEl) progressEl.style.width = \`\${progress}%\`;
+
+        document.querySelectorAll('.step-v2').forEach((step, index) => {
+          const stepNum = index + 1;
+          step.classList.remove('active', 'completed');
+
+          if (stepNum === this.currentStep) {
+            step.classList.add('active');
+          } else if (stepNum < this.currentStep) {
+            step.classList.add('completed');
+          }
+        });
+      },
+
+      updateSummary() {
+        const scores = this.calculateScores();
+
+        // Update final score
+        document.getElementById('final-total-score').textContent = \`\${scores.total} PONTOS\`;
+        const finalBadge = document.getElementById('final-risk-badge');
+        const finalProgress = document.getElementById('final-risk-progress');
+
+        finalBadge.className = 'risk-badge mx-auto';
+        if (scores.total >= 7) {
+          finalBadge.classList.add('risk-badge--danger');
+          finalBadge.querySelector('span').textContent = '🔴';
+          finalBadge.querySelector('.text-xs').textContent = 'RISCO ALTO';
+          finalProgress.style.backgroundColor = '#991B1B';
+        } else if (scores.total >= 4) {
+          finalBadge.classList.add('risk-badge--warning');
+          finalBadge.querySelector('span').textContent = '🟡';
+          finalBadge.querySelector('.text-xs').textContent = 'RISCO MODERADO';
+          finalProgress.style.backgroundColor = '#D97706';
+        } else {
+          finalBadge.classList.add('risk-badge--success');
+          finalBadge.querySelector('span').textContent = '🟢';
+          finalBadge.querySelector('.text-xs').textContent = 'RISCO BAIXO';
+          finalProgress.style.backgroundColor = '#4A7C59';
+        }
+        finalProgress.style.width = \`\${scores.percentage}%\`;
+
+        // Update summary data
+        document.getElementById('summary-location').textContent = this.assessment.location || '-';
+        document.getElementById('summary-date').textContent = \`\${this.assessment.date} \${this.assessment.time}\`;
+        document.getElementById('summary-assessor').textContent = this.assessment.assessor || '-';
+        document.getElementById('summary-coords').textContent =
+          this.assessment.latitude && this.assessment.longitude ?
+            \`\${this.assessment.latitude}, \${this.assessment.longitude}\` : '-';
+        document.getElementById('summary-species').textContent = this.assessment.species || '-';
+        document.getElementById('summary-height').textContent = this.assessment.height ? \`\${this.assessment.height}m\` : '-';
+        document.getElementById('summary-dap').textContent = this.assessment.dap ? \`\${this.assessment.dap}cm\` : '-';
+
+        document.getElementById('summary-item1').textContent = \`\${this.assessment.item1} pts\`;
+        document.getElementById('summary-item2').textContent = \`\${this.assessment.item2} pts\`;
+        document.getElementById('summary-item3').textContent = \`\${this.assessment.item3} pts\`;
+        document.getElementById('summary-item4').textContent = \`\${this.assessment.item4} pts\`;
+        document.getElementById('summary-total').textContent = \`\${scores.total} pts\`;
+
+        // Show Item 2 selected defects
+        const item2DefectsContainer = document.getElementById('summary-item2-defects');
+        const selectedDefects = [];
+        document.querySelectorAll('.item2-defect input[type="checkbox"]:checked').forEach(cb => {
+          const label = cb.closest('.item2-defect').querySelector('h4').textContent;
+          const score = cb.dataset.score;
+          selectedDefects.push(\`\${label} (\${score} pts)\`);
+        });
+
+        if (selectedDefects.length > 0) {
+          item2DefectsContainer.innerHTML = selectedDefects.map(defect =>
+            \`<div class="mb-1">• \${defect}</div>\`
+          ).join('') +
+            \`<div class="mt-2 text-xs text-gray-500 font-medium">Pontuação máxima aplicada: \${this.assessment.item2} pts</div>\`;
+        } else {
+          item2DefectsContainer.innerHTML = '<div class="text-gray-500 italic">Nenhum defeito selecionado</div>';
+        }
+
+        // Show Item 4 selected factors
+        const item4DetailsContainer = document.getElementById('summary-item4-details');
+        const selectedFactors = [];
+        document.querySelectorAll('.item4-factor input[type="checkbox"]:checked').forEach(cb => {
+          const label = cb.closest('.item4-factor').querySelector('h4').textContent;
+          const score = cb.dataset.score;
+          selectedFactors.push(\`\${label} (\${score} pts)\`);
+        });
+
+        const item4Observations = document.getElementById('item4-observations')?.value;
+
+        if (selectedFactors.length > 0) {
+          let item4Html = selectedFactors.map(factor =>
+            \`<div class="mb-1">• \${factor}</div>\`
+          ).join('');
+          item4Html += \`<div class="mt-2 text-xs text-gray-500 font-medium">Pontuação máxima aplicada: \${this.assessment.item4} pts</div>\`;
+          if (item4Observations) {
+            item4Html += \`<div class="text-gray-500 italic mt-2">Obs: \${item4Observations}</div>\`;
+          }
+          item4DetailsContainer.innerHTML = item4Html;
+        } else {
+          item4DetailsContainer.innerHTML = '<div class="text-gray-500 italic">Nenhum fator adicional selecionado</div>';
+        }
+
+        // Update checklist summary
+        const checkedItems = Object.entries(this.assessment.checklist)
+          .filter(([key, value]) => value)
+          .map(([key]) => this.formatChecklistLabel(key));
+
+        document.getElementById('summary-checklist-count').textContent = checkedItems.length;
+        const checklistContainer = document.getElementById('summary-checklist');
+        checklistContainer.innerHTML = checkedItems.length > 0
+          ? checkedItems.map(item => \`<span class="bg-[#6B9B7F]/10 text-[#2D5F7E] px-3 py-1 rounded-full text-sm">\${item}</span>\`).join('')
+          : '<span class="text-gray-500">Nenhum item marcado</span>';
+
+        // Update observations
+        document.getElementById('summary-observations').textContent =
+          this.assessment.observations || 'Nenhuma observação adicionada';
+      },
+
+      formatChecklistLabel(key) {
+        const labels = {
+          raizes_podridao: 'Podridão nas raízes',
+          raizes_expostas: 'Raízes expostas',
+          fissuras_cavidades: 'Fissuras/cavidades',
+          fungos_base: 'Fungos na base',
+          casca_solta: 'Casca solta',
+          fossas_galerias: 'Fossas/galerias',
+          insetos: 'Presença de insetos',
+          galhos_mortos: 'Galhos mortos',
+          inclinacao: 'Inclinação acentuada',
+          pregos_arames: 'Pregos/arames',
+          edificacoes: 'Edificações próximas',
+          veiculos: 'Veículos',
+          fios_energizados: 'Fios energizados',
+          risco_pessoas: 'Risco a pessoas',
+          arvores_proximas_caidas: 'Árvores caídas',
+          animais: 'Presença de animais',
+          plantas_toxicas: 'Plantas tóxicas',
+          outros: 'Outros fatores'
+        };
+        return labels[key] || key;
+      },
+
+      checkAll(checked) {
+        document.querySelectorAll('.checkbox-card:not(.item2-defect):not(.item4-factor) input[type="checkbox"]').forEach(cb => {
+          cb.checked = checked;
+          cb.closest('.checkbox-card').classList.toggle('checked', checked);
+        });
+        this.calculateScores();
+      },
+
+      clearItem2Defects() {
+        document.querySelectorAll('.item2-defect input[type="checkbox"]').forEach(cb => {
+          cb.checked = false;
+          cb.closest('.item2-defect').classList.remove('checked');
+        });
+        this.calculateItem2Score();
+      },
+
+      clearItem4Factors() {
+        document.querySelectorAll('.item4-factor input[type="checkbox"]').forEach(cb => {
+          cb.checked = false;
+          cb.closest('.item4-factor').classList.remove('checked');
+        });
+        this.calculateItem4Score();
+      },
+
+      getLocation() {
+        if ('geolocation' in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+              document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+              this.updateAssessmentData();
+              alert('Localização capturada com sucesso!');
+            },
+            (error) => {
+              alert('Erro ao capturar localização: ' + error.message);
+            }
+          );
+        } else {
+          alert('Geolocalização não suportada neste navegador');
+        }
+      },
+
+      showDashboard() {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-dashboard').classList.add('active');
+        this.updateDashboard();
+      },
+
+      showHistory() {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-history').classList.add('active');
+        this.renderHistory();
+      },
+
+      newAssessment() {
+        // Reset assessment
+        this.assessment = {
+          id: Date.now().toString(),
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toTimeString().slice(0, 5),
+          assessor: '',
+          location: '',
+          latitude: '',
+          longitude: '',
+          species: '',
+          height: '',
+          dap: '',
+          item1: 3,
+          item2: 0,
+          item3: 3,
+          item4: 0,
+          diameterExact: '',
+          checklist: {},
+          observations: '',
+          createdAt: new Date()
+        };
+
+        // Reset form
+        document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(input => input.value = '');
+
+        // Reset all checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          cb.checked = false;
+          if (cb.closest('.checkbox-card')) {
+            cb.closest('.checkbox-card').classList.remove('checked');
+          }
+        });
+
+        // Reset all radio buttons
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.checked = false;
+          if (radio.closest('.radio-card')) {
+            radio.closest('.radio-card').classList.remove('selected');
+          }
+        });
+
+        // Set default values for Item 1
+        const item1Default = document.querySelector('input[name="item1"][value="3"]');
+        if (item1Default) {
+          item1Default.checked = true;
+          item1Default.closest('.radio-card').classList.add('selected');
+        }
+
+        // Item 2: No default selection (user selects defects)
+        this.assessment.item2 = 0;
+
+        // Set default value for Item 3
+        const item3Default = document.querySelector('input[name="item3"][value="3"]');
+        if (item3Default) {
+          item3Default.checked = true;
+          item3Default.closest('.radio-card').classList.add('selected');
+        }
+
+        // Item 4: No default selection (user selects factors)
+        this.assessment.item4 = 0;
+
+        // Reset to step 1
+        this.currentStep = 1;
+        document.querySelectorAll('.step-content').forEach((step, index) => {
+          step.classList.toggle('hidden', index !== 0);
+        });
+        this.updateStepIndicator();
+        this.calculateScores();
+
+        // Show form page
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-form').classList.add('active');
+
+        // Set current date/time
+        const now = new Date();
+        document.getElementById('assessment-date').value = now.toISOString().split('T')[0];
+        document.getElementById('assessment-time').value = now.toTimeString().slice(0, 5);
+      },
+
+      saveDraft() {
+        this.updateAssessmentData();
+        this.assessment.createdAt = new Date();
+
+        // Add to history
+        const existingIndex = this.history.findIndex(h => h.id === this.assessment.id);
+        if (existingIndex >= 0) {
+          this.history[existingIndex] = { ...this.assessment };
+        } else {
+          this.history.unshift({ ...this.assessment });
+        }
+
+        this.saveHistory();
+        alert('Rascunho salvo com sucesso!');
+        this.showDashboard();
+      },
+
+      generatePDF() {
+        this.updateAssessmentData();
+        const scores = this.calculateScores();
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 20;
+        let y = margin;
+
+        // Header
+        doc.setFillColor(26, 58, 52); // Dark Forest Green
+        doc.rect(0, 0, pageWidth, 50, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RELATÓRIO DE AVALIAÇÃO', margin, y + 15);
+        doc.text('DE RISCO ARBÓREO', margin, y + 30);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(\`Data: \${this.assessment.date} \${this.assessment.time}\`, pageWidth - margin - 50, y + 15);
+
+        y = 70;
+
+        // Risk Level Box
+        const riskLevel = scores.total >= 7 ? 'ALTO' : scores.total >= 4 ? 'MODERADO' : 'BAIXO';
+        const riskColor = scores.total >= 7 ? [153, 27, 27] : scores.total >= 4 ? [217, 119, 6] : [74, 124, 89];
+
+        doc.setFillColor(...riskColor);
+        doc.roundedRect(margin, y, pageWidth - margin * 2, 40, 5, 5, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text(\`\${scores.total} PONTOS - RISCO \${riskLevel}\`, margin + 10, y + 25);
+
+        y += 55;
+
+        // Sections Header Color
+        const sectionHeaderColor = [26, 58, 52];
+
+        // Location Section
+        doc.setTextColor(...sectionHeaderColor);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('1. LOCALIZAÇÃO', margin, y);
+
+        y += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        doc.text(\`Local: \${this.assessment.location || 'Não informado'}\`, margin, y);
+        y += 7;
+        doc.text(\`Coordenadas: \${this.assessment.latitude || '-'}, \${this.assessment.longitude || '-'}\`, margin, y);
+        y += 7;
+        doc.text(\`Avaliador: \${this.assessment.assessor || 'Não informado'}\`, margin, y);
+
+        y += 15;
+
+        // Tree Data Section
+        doc.setTextColor(45, 95, 126);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('2. DADOS DA ÁRVORE', margin, y);
+
+        y += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        doc.text(\`Espécie: \${this.assessment.species || 'Não informada'}\`, margin, y);
+        y += 7;
+        doc.text(\`Altura estimada: \${this.assessment.height ? this.assessment.height + 'm' : 'Não informada'}\`, margin, y);
+        y += 7;
+        doc.text(\`DAP: \${this.assessment.dap ? this.assessment.dap + 'cm' : 'Não informado'}\`, margin, y);
+
+        y += 15;
+
+        // Score Table
+        doc.setTextColor(45, 95, 126);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('3. PONTUAÇÃO', margin, y);
+
+        y += 5;
+
+        const tableData = [
+          ['Item 1 - Avaliação dos Alvos', this.assessment.item1.toString()],
+          ['Item 2 - Condição da Árvore', this.assessment.item2.toString()],
+          ['Item 3 - Diâmetro Defeituoso', this.assessment.item3.toString()],
+          ['Item 4 - Outros Fatores', this.assessment.item4.toString()],
+          ['TOTAL', scores.total.toString()]
+        ];
+
+        doc.autoTable({
+          startY: y,
+          head: [['Item', 'Pontuação']],
+          body: tableData,
+          theme: 'striped',
+          headStyles: { fillColor: [45, 95, 126] },
+          styles: { fontSize: 10 },
+          margin: { left: margin, right: margin }
+        });
+
+        y = doc.lastAutoTable.finalY + 15;
+
+        // Checklist
+        if (y > 250) {
+          doc.addPage();
+          y = margin;
+        }
+
+        doc.setTextColor(45, 95, 126);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('4. CHECKLIST DE VERIFICAÇÃO', margin, y);
+
+        y += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+
+        const checkedItems = Object.entries(this.assessment.checklist)
+          .filter(([key, value]) => value)
+          .map(([key]) => this.formatChecklistLabel(key));
+
+        if (checkedItems.length > 0) {
+          checkedItems.forEach((item, index) => {
+            if (y > 270) {
+              doc.addPage();
+              y = margin;
+            }
+            doc.text(\`☑ \${item}\`, margin + 5, y);
+            y += 7;
+          });
+        } else {
+          doc.text('Nenhum item marcado', margin + 5, y);
+          y += 7;
+        }
+
+        // Observations
+        if (y > 250) {
+          doc.addPage();
+          y = margin;
+        }
+
+        y += 10;
+        doc.setTextColor(45, 95, 126);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('5. OBSERVAÇÕES', margin, y);
+
+        y += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+
+        const observations = this.assessment.observations || 'Nenhuma observação adicionada';
+        const splitObservations = doc.splitTextToSize(observations, pageWidth - margin * 2);
+        doc.text(splitObservations, margin, y);
+
+        // Footer
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(128, 128, 128);
+          doc.text(\`Página \${i} de \${pageCount}\`, pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 10);
+          doc.text('Sistema de Avaliação Arbórea', margin, doc.internal.pageSize.getHeight() - 10);
+        }
+
+        // Save
+        doc.save(\`avaliacao-arborea-\${this.assessment.date}.pdf\`);
+
+        // Save to history
+        this.saveDraft();
+      },
+
+      loadHistory() {
+        const saved = localStorage.getItem('arboreal-assessments');
+        if (saved) {
+          this.history = JSON.parse(saved);
+        }
+      },
+
+      saveHistory() {
+        localStorage.setItem('arboreal-assessments', JSON.stringify(this.history));
+      },
+
+      updateDashboard() {
+        const today = new Date().toISOString().split('T')[0];
+        const currentMonth = today.slice(0, 7);
+
+        const total = this.history.length;
+        const todayCount = this.history.filter(h => h.date === today).length;
+        const monthCount = this.history.filter(h => h.date && h.date.startsWith(currentMonth)).length;
+
+        const getTotalScore = (h) => h.item1 + h.item2 + h.item3 + h.item4;
+        const highRiskCount = this.history.filter(h => getTotalScore(h) >= 7).length;
+
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-today').textContent = todayCount;
+        document.getElementById('stat-month').textContent = monthCount;
+        document.getElementById('stat-high-risk').textContent = highRiskCount;
+
+        // Risk distribution
+        const lowRisk = this.history.filter(h => getTotalScore(h) <= 3).length;
+        const moderateRisk = this.history.filter(h => {
+          const score = getTotalScore(h);
+          return score >= 4 && score <= 6;
+        }).length;
+        const highRisk = this.history.filter(h => getTotalScore(h) >= 7).length;
+
+        document.getElementById('risk-low-count').textContent = lowRisk;
+        document.getElementById('risk-moderate-count').textContent = moderateRisk;
+        document.getElementById('risk-high-count').textContent = highRisk;
+
+        // Recent assessments
+        const recentContainer = document.getElementById('recent-assessments');
+        const recent = this.history.slice(0, 5);
+
+        if (recent.length > 0) {
+          recentContainer.innerHTML = recent.map(h => {
+            const score = getTotalScore(h);
+            const riskClass = score >= 7 ? 'bg-[#991B1B]/10 text-[#991B1B]' : score >= 4 ? 'bg-[#D97706]/10 text-[#D97706]' : 'bg-[#4A7C59]/10 text-[#4A7C59]';
+            const riskLabel = score >= 7 ? 'Alto' : score >= 4 ? 'Moderado' : 'Baixo';
+
+            return \`
+              <div class="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-all cursor-pointer group" onclick="app.loadAssessment('\${h.id}')">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-[#1A3A34]/5 flex items-center justify-center text-[#1A3A34] text-xl group-hover:bg-[#1A3A34] group-hover:text-white transition-all">
+                    <i data-lucide="tree-pine"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold text-[#1A3A34]">\${h.location || 'Local não informado'}</div>
+                    <div class="text-[11px] text-gray-500 uppercase font-bold tracking-wider">\${h.species || 'Espécie não informada'} • \${h.date}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="\${riskClass} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">\${riskLabel}</span>
+                  <div class="text-xl font-display font-bold text-[#1A3A34] mt-1">\${score} pts</div>
+                </div>
+              </div>
+            \`;
+          }).join('');
+        } else {
+          recentContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhuma avaliação realizada ainda</p>';
+        }
+      },
+
+      renderHistory() {
+        const container = document.getElementById('history-list');
+        const searchTerm = document.getElementById('history-search')?.value.toLowerCase() || '';
+        const riskFilter = document.getElementById('history-filter-risk')?.value || '';
+
+        let filtered = this.history;
+
+        if (searchTerm) {
+          filtered = filtered.filter(h =>
+            (h.location || '').toLowerCase().includes(searchTerm) ||
+            (h.species || '').toLowerCase().includes(searchTerm)
+          );
+        }
+
+        if (riskFilter) {
+          filtered = filtered.filter(h => {
+            const score = h.item1 + h.item2 + h.item3 + h.item4;
+            if (riskFilter === 'low') return score <= 3;
+            if (riskFilter === 'moderate') return score >= 4 && score <= 6;
+            if (riskFilter === 'high') return score >= 7;
+          });
+        }
+
+        if (filtered.length > 0) {
+          container.innerHTML = filtered.map(h => {
+            const score = (h.item1 || 0) + (h.item2 || 0) + (h.item3 || 0) + (h.item4 || 0);
+            const riskClass = score >= 7 ? 'bg-[#991B1B]/10 text-[#991B1B]' : score >= 4 ? 'bg-[#D97706]/10 text-[#D97706]' : 'bg-[#4A7C59]/10 text-[#4A7C59]';
+            const riskLabel = score >= 7 ? 'Alto' : score >= 4 ? 'Moderado' : 'Baixo';
+
+            return \`
+              <div class="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl hover:shadow-lg transition-all cursor-pointer group mb-4" onclick="app.loadAssessment('\${h.id}')">
+                <div class="flex items-center gap-5">
+                  <div class="w-14 h-14 rounded-2xl bg-[#1A3A34]/5 flex items-center justify-center text-[#1A3A34] text-2xl group-hover:bg-[#1A3A34] group-hover:text-white transition-all">
+                    <i data-lucide="file-text"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold text-lg text-[#1A3A34] mb-1">\${h.location || 'Sem localização'}</div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">\${h.species || 'Sem espécie'}</span>
+                      <span class="w-1 h-1 rounded-full bg-gray-200"></span>
+                      <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">\${h.date}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="\${riskClass} px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">\${riskLabel}</span>
+                  <div class="text-2xl font-display font-bold text-[#1A3A34] mt-2">\${score} PONTOS</div>
+                </div>
+              </div>
+            \`;
+          }).join('');
+          if (window.lucide) window.lucide.createIcons();
+        } else {
+          container.innerHTML = '<div class="text-center py-20 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200"><i data-lucide="search-x" class="mx-auto w-12 h-12 text-gray-300 mb-4"></i><p class="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Nenhuma avaliação encontrada</p></div>';
+          if (window.lucide) window.lucide.createIcons();
+        }
+      },
+
+      filterHistory() {
+        this.renderHistory();
+      },
+
+      loadAssessment(id) {
+        const assessment = this.history.find(h => h.id === id);
+        if (assessment) {
+          this.assessment = { ...assessment };
+
+          // Populate form
+          document.getElementById('assessment-date').value = assessment.date || '';
+          document.getElementById('assessment-time').value = assessment.time || '';
+          document.getElementById('assessor-name').value = assessment.assessor || '';
+          document.getElementById('location-name').value = assessment.location || '';
+          document.getElementById('latitude').value = assessment.latitude || '';
+          document.getElementById('longitude').value = assessment.longitude || '';
+          document.getElementById('tree-species').value = assessment.species || '';
+          document.getElementById('tree-height').value = assessment.height || '';
+          document.getElementById('tree-dap').value = assessment.dap || '';
+          document.getElementById('diameter-exact').value = assessment.diameterExact || '';
+          document.getElementById('observations').value = assessment.observations || '';
+
+          // Set radio values (Item 1 and Item 3)
+          document.querySelectorAll('.radio-card input[type="radio"]').forEach(r => {
+            r.checked = false;
+            r.closest('.radio-card')?.classList.remove('selected');
+          });
+          const item1Radio = document.querySelector(\`input[name="item1"][value="\${assessment.item1}"]\`);
+          if (item1Radio) {
+            item1Radio.checked = true;
+            item1Radio.closest('.radio-card').classList.add('selected');
+          }
+          const item3Radio = document.querySelector(\`input[name="item3"][value="\${assessment.item3}"]\`);
+          if (item3Radio) {
+            item3Radio.checked = true;
+            item3Radio.closest('.radio-card').classList.add('selected');
+          }
+          const item4Radio = document.querySelector(\`input[name="item4"][value="\${assessment.item4}"]\`);
+          if (item4Radio) {
+            item4Radio.checked = true;
+            item4Radio.closest('.radio-card').classList.add('selected');
+          }
+
+          // Reset Item 2 checkboxes
+          document.querySelectorAll('.item2-defect input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.item2-defect').classList.remove('checked');
+          });
+
+          // Reset Item 4 checkboxes
+          document.querySelectorAll('.item4-factor input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.item4-factor').classList.remove('checked');
+          });
+
+          // Set checklist checkboxes (excluding Item 2 defects and Item 4 factors)
+          document.querySelectorAll('.checkbox-card:not(.item2-defect):not(.item4-factor) input[type="checkbox"]').forEach(cb => {
+            cb.checked = assessment.checklist?.[cb.value] || false;
+            cb.closest('.checkbox-card').classList.toggle('checked', cb.checked);
+          });
+
+          this.currentStep = 1;
+          document.querySelectorAll('.step-content').forEach((step, index) => {
+            step.classList.toggle('hidden', index !== 0);
+          });
+          this.updateStepIndicator();
+          this.calculateScores();
+
+          document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+          document.getElementById('page-form').classList.add('active');
+        }
+      },
+
+      deleteAssessment(id) {
+        if (confirm('Tem certeza que deseja excluir esta avaliação?')) {
+          this.history = this.history.filter(h => h.id !== id);
+          this.saveHistory();
+          this.updateDashboard();
+          this.renderHistory();
+        }
+      }
+    };
+
+    // Initialize app when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      app.init();
+    });
+  </script>
+</body>
+
+</html>`;
