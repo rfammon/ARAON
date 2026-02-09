@@ -419,6 +419,41 @@ export const FORM_HTML = `<!DOCTYPE html>
       height: 20px;
       stroke-width: 2.5;
     }
+
+    /* Fix for branching lines bug - ESCALATED */
+    #checklist-roots .checkbox-card,
+    #checklist-trunk .checkbox-card,
+    #checklist-surroundings .checkbox-card,
+    #checklist-roots label,
+    #checklist-trunk label,
+    #checklist-surroundings label {
+      border-left: 2.5px solid #E5E7EB !important;
+      border-radius: 20px !important;
+      margin-left: 0 !important;
+      padding-left: 1rem !important;
+      position: relative !important;
+      background: white !important;
+    }
+
+    /* Force remove any pseudo-elements creating lines */
+    #checklist-roots .checkbox-card::before,
+    #checklist-roots .checkbox-card::after,
+    #checklist-trunk .checkbox-card::before,
+    #checklist-trunk .checkbox-card::after,
+    #checklist-surroundings .checkbox-card::before,
+    #checklist-surroundings .checkbox-card::after,
+    #checklist-roots label::before,
+    #checklist-roots label::after,
+    #checklist-trunk label::before,
+    #checklist-trunk label::after,
+    #checklist-surroundings label::before,
+    #checklist-surroundings label::after {
+      content: none !important;
+      display: none !important;
+      border: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
   </style>
 </head>
 

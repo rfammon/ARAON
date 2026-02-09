@@ -34,3 +34,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .tsbuildinfo
+
+# Python scripts (development only)
+*.py
+__pycache__/
+*.pyc
+
+# Temporary files
+~$*
+*.tmp
+test_*.txt
+Captura*.png

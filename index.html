@@ -419,6 +419,73 @@
       height: 20px;
       stroke-width: 2.5;
     }
+
+    /* Fix for branching lines bug - ESCALATED */
+    #checklist-roots .checkbox-card,
+    #checklist-trunk .checkbox-card,
+    #checklist-surroundings .checkbox-card,
+    #checklist-roots label,
+    #checklist-trunk label,
+    #checklist-surroundings label {
+      border-left: 2.5px solid #E5E7EB !important;
+      border-radius: 20px !important;
+      margin-left: 0 !important;
+      padding-left: 1rem !important;
+      position: relative !important;
+      background: white !important;
+    }
+
+    /* Force remove any pseudo-elements creating lines */
+    #checklist-roots .checkbox-card::before,
+    #checklist-roots .checkbox-card::after,
+    #checklist-trunk .checkbox-card::before,
+    #checklist-trunk .checkbox-card::after,
+    #checklist-surroundings .checkbox-card::before,
+    #checklist-surroundings .checkbox-card::after,
+    #checklist-roots label::before,
+    #checklist-roots label::after,
+    #checklist-trunk label::before,
+    #checklist-trunk label::after,
+    #checklist-surroundings label::before,
+    #checklist-surroundings label::after {
+      content: none !important;
+      display: none !important;
+      border: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+  
+    /* checklist-card - Isolated Style */
+    .checkbox-card {
+      background: white;
+      border: 2.5px solid #E5E7EB;
+      border-left-width: 2.5px !important;
+      border-radius: 20px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      display: block;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    .checkbox-card:hover {
+      border-color: var(--color-secondary);
+      background: #F0F7F2;
+    }
+    .checkbox-card.checked {
+      border-color: var(--color-primary);
+      background: #F0F7F2;
+      box-shadow: 0 10px 20px -5px rgba(26, 58, 52, 0.1);
+    }
+    .checkbox-card::before, .checkbox-card::after {
+      content: none !important;
+      display: none !important;
+    }
+
+    /* Allow border-left color override for checkbox cards */
+    .checkbox-card.border-l-4 {
+      border-left-width: 4px !important;
+    }
+
   </style>
 </head>
 
@@ -1360,14 +1427,14 @@
                 <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Sistema Radicular</h4>
               </div>
               <div class="space-y-2" id="checklist-roots">
-                <label class="checkbox-card p-4 group">
+                <label class="checkbox-card p-4 group border-l-4 border-[#4A7C59] cursor-pointer">
                   <input type="checkbox" value="raizes_podridao" class="hidden">
                   <div class="flex items-center gap-3">
                     <div class="selection-indicator"></div>
                     <span class="text-sm text-gray-700">Podridão e degradação</span>
                   </div>
                 </label>
-                <label class="checkbox-card p-4 group">
+                <label class="checkbox-card p-4 group border-l-4 border-[#4A7C59] cursor-pointer">
                   <input type="checkbox" value="raizes_expostas" class="hidden">
                   <div class="flex items-center gap-3">
                     <div class="selection-indicator"></div>
@@ -1384,14 +1451,14 @@
                 <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Tronco e Estrutura</h4>
               </div>
               <div class="space-y-2" id="checklist-trunk">
-                <label class="checkbox-card p-4 group">
+                <label class="checkbox-card p-4 group border-l-4 border-[#4A7C59] cursor-pointer">
                   <input type="checkbox" value="fissuras_cavidades" class="hidden">
                   <div class="flex items-center gap-3">
                     <div class="selection-indicator"></div>
                     <span class="text-sm text-gray-700">Fissuras e cavidades</span>
                   </div>
                 </label>
-                <label class="checkbox-card p-4 group">
+                <label class="checkbox-card p-4 group border-l-4 border-[#4A7C59] cursor-pointer">
                   <input type="checkbox" value="fungos_base" class="hidden">
                   <div class="flex items-center gap-3">
                     <div class="selection-indicator"></div>
@@ -1408,21 +1475,21 @@
                 <h4 class="text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Riscos ao Entorno</h4>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="checklist-surroundings">
-                <label class="checkbox-card p-4 group">
+                <label class="checkbox-card p-4 group border-l-4 border-[#991B1B] cursor-pointer">
                   <input type="checkbox" value="edificacoes" class="hidden">
                   <div class="flex items-center gap-3">
                     <div class="selection-indicator"></div>
                     <span class="text-sm text-gray-700">Edificações</span>
                   </div>
                 </label>
-                <label class="checkbox-card p-4 group">
+                <label class="checkbox-card p-4 group border-l-4 border-[#991B1B] cursor-pointer">
                   <input type="checkbox" value="fios_energizados" class="hidden">
                   <div class="flex items-center gap-3">
                     <div class="selection-indicator"></div>
                     <span class="text-sm text-gray-700">Rede Elétrica</span>
                   </div>
                 </label>
-                <label class="checkbox-card p-4 group">
+                <label class="checkbox-card p-4 group border-l-4 border-[#991B1B] cursor-pointer">
                   <input type="checkbox" value="risco_pessoas" class="hidden">
                   <div class="flex items-center gap-3">
                     <div class="selection-indicator"></div>
@@ -1809,7 +1876,7 @@
 
         // Update checklist (excluding Item 2 defects and Item 4 factors)
         this.assessment.checklist = {};
-        document.querySelectorAll('.checkbox-card:not(.item2-defect):not(.item4-factor) input[type="checkbox"]').forEach(cb => {
+        document.querySelectorAll('.checklist-card input[type="checkbox"]').forEach(cb => {
           this.assessment.checklist[cb.value] = cb.checked;
         });
       },
@@ -2034,7 +2101,7 @@
       },
 
       checkAll(checked) {
-        document.querySelectorAll('.checkbox-card:not(.item2-defect):not(.item4-factor) input[type="checkbox"]').forEach(cb => {
+        document.querySelectorAll('#checklist-roots .checkbox-card input[type="checkbox"], #checklist-trunk .checkbox-card input[type="checkbox"], #checklist-surroundings .checkbox-card input[type="checkbox"]').forEach(cb => {
           cb.checked = checked;
           cb.closest('.checkbox-card').classList.toggle('checked', checked);
         });
@@ -2549,7 +2616,7 @@
           });
 
           // Set checklist checkboxes (excluding Item 2 defects and Item 4 factors)
-          document.querySelectorAll('.checkbox-card:not(.item2-defect):not(.item4-factor) input[type="checkbox"]').forEach(cb => {
+          document.querySelectorAll('.checklist-card input[type="checkbox"]').forEach(cb => {
             cb.checked = assessment.checklist?.[cb.value] || false;
             cb.closest('.checkbox-card').classList.toggle('checked', cb.checked);
           });
