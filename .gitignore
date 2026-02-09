@@ -1,47 +1,25 @@
-# .gitignore for ARAON Project
+# ARAON Project - GitHub Pages
+index.html
 
-# Dependencies
-node_modules/
-TimeTrackerApp/node_modules/
-
-# Expo / Mobile Build
-.expo/
-TimeTrackerApp/.expo/
-dist/
-web-build/
-expo-env.d.ts
-
-# Native folders (generated)
-/ios
-/android
-TimeTrackerApp/ios
-TimeTrackerApp/android
+# GitHub Actions
+.github/
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Environment / Keys
-.env*.local
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Temp / Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.tsbuildinfo
-
-# Python scripts (development only)
+# Misc
+*.xlsx
+*.docx
 *.py
-__pycache__/
-*.pyc
-
-# Temporary files
-~$*
 *.tmp
-test_*.txt
-Captura*.png
+~$*
+node_modules/
+dist/
+web-build/
+skill/
+TimeTrackerApp/
+brain/
+walkthrough.md
+implementation_plan.md
+task.md

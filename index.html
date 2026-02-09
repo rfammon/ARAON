@@ -9,6 +9,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -588,42 +590,25 @@
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Crítico</span>
           </div>
           <div id="stat-high-risk" class="text-3xl font-bold text-[#991B1B]">0</div>
-          <div class="text-xs text-gray-500 mt-1">Risco alto detectado</div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        <!-- Distribution and Recent -->
         <div class="lg:col-span-2 space-y-8">
-          <div class="glass-card p-8">
-            <h3 class="font-display text-xl font-bold text-[#1A3A34] mb-6 flex items-center gap-2">
-              <i data-lucide="pie-chart" class="text-[#D97706]"></i>
+          <!-- Risk Distribution Chart -->
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 glass-effect">
+            <h3 class="text-lg font-display font-bold text-[#1A3A34] mb-6 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-[#D97706]"></i>
               Distribuição de Risco
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="p-4 rounded-2xl bg-[#ECFDF5] border border-[#2D6A4F]/20">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-bold text-[#2D6A4F] uppercase tracking-wider">Baixo</span>
-                  <div class="w-2 h-2 rounded-full bg-[#2D6A4F]"></div>
-                </div>
-                <div id="risk-low-count" class="text-3xl font-bold text-[#2D6A4F]">0</div>
-                <div class="text-[10px] text-[#2D6A4F]/60 mt-1">0-3 pontos</div>
+
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8 py-4">
+              <div class="relative w-full max-w-[240px] aspect-square mx-auto">
+                <canvas id="riskChart"></canvas>
               </div>
-              <div class="p-4 rounded-2xl bg-[#FFFBEB] border border-[#B45309]/20">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-bold text-[#B45309] uppercase tracking-wider">Moderado</span>
-                  <div class="w-2 h-2 rounded-full bg-[#B45309]"></div>
-                </div>
-                <div id="risk-moderate-count" class="text-3xl font-bold text-[#B45309]">0</div>
-                <div class="text-[10px] text-[#B45309]/60 mt-1">4-6 pontos</div>
-              </div>
-              <div class="p-4 rounded-2xl bg-[#FEF2F2] border border-[#991B1B]/20">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-bold text-[#991B1B] uppercase tracking-wider">Alto</span>
-                  <div class="w-2 h-2 rounded-full bg-[#991B1B]"></div>
-                </div>
-                <div id="risk-high-count" class="text-3xl font-bold text-[#991B1B]">0</div>
-                <div class="text-[10px] text-[#991B1B]/60 mt-1">7-10 pontos</div>
+              <!-- Custom Legend -->
+              <div id="risk-legend" class="flex flex-col gap-3 min-w-[200px]">
+                <!-- Content populated by JS -->
               </div>
             </div>
           </div>
@@ -635,7 +620,8 @@
                 Avaliações Recentes
               </h3>
               <button onclick="app.showHistory()"
-                class="text-sm font-semibold text-[#4A7C59] hover:text-[#1A3A34] transition-colors">Ver tudo →</button>
+                class="text-sm font-semibold text-[#4A7C59] hover:text-[#1A3A34] transition-colors">Ver tudo
+                →</button>
             </div>
             <div id="recent-assessments" class="space-y-4">
               <p class="text-gray-500 text-center py-8 italic">Nenhuma avaliação realizada ainda</p>
@@ -648,7 +634,8 @@
           <div class="glass-card p-8 bg-[#1A3A34] text-white overflow-hidden relative">
             <div class="relative z-10">
               <h3 class="font-display text-2xl font-bold mb-4">Pronto para avaliar?</h3>
-              <p class="text-gray-300 text-sm mb-8 leading-relaxed">Inicie agora uma nova inspeção técnica seguindo os
+              <p class="text-gray-300 text-sm mb-8 leading-relaxed">Inicie agora uma nova inspeção técnica seguindo
+                os
                 protocolos de segurança.</p>
               <button onclick="app.newAssessment()"
                 class="w-full bg-[#D97706] hover:bg-[#B45309] text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-[#D97706]/20">
@@ -725,7 +712,8 @@
               <i id="risk-icon" data-lucide="shield-check" class="w-6 h-6"></i>
               <div>
                 <div class="text-2xl font-bold leading-none mb-1" id="total-score">0 PONTOS</div>
-                <div id="risk-text" class="text-[10px] font-bold uppercase tracking-widest opacity-70">Risco Baixo</div>
+                <div id="risk-text" class="text-[10px] font-bold uppercase tracking-widest opacity-70">Risco Baixo
+                </div>
               </div>
             </div>
           </div>
@@ -773,7 +761,8 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
-              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Data da Vistoria</label>
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Data da
+                Vistoria</label>
               <div class="relative">
                 <i data-lucide="calendar" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
                 <input type="date" id="assessment-date" class="glass-input !pl-12" required>
@@ -787,7 +776,8 @@
               </div>
             </div>
             <div class="md:col-span-2 space-y-2">
-              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Técnico Responsável</label>
+              <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Técnico
+                Responsável</label>
               <div class="relative">
                 <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"></i>
                 <input type="text" id="assessor-name" class="glass-input !pl-12" placeholder="Nome completo" required>
@@ -834,7 +824,8 @@
                 <input type="text" id="tree-species" class="glass-input" placeholder="Ex: Ipê Amarelo" required>
               </div>
               <div class="space-y-2">
-                <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Altura Est. (m)</label>
+                <label class="block text-xs font-bold text-[#1A3A34] uppercase tracking-wider">Altura Est.
+                  (m)</label>
                 <input type="number" id="tree-height" class="glass-input" placeholder="12" step="0.5" min="0">
               </div>
               <div class="space-y-2">
@@ -885,7 +876,8 @@
                   <i data-lucide="users" class="w-5 h-5 text-[#991B1B]/40 group-[.selected]:text-[#991B1B]"></i>
                 </div>
                 <h4 class="font-bold text-[#1A3A34] mb-1">Risco Alto</h4>
-                <p class="text-[11px] text-gray-500 leading-relaxed">Pessoas presentes frequentemente. Parques, calçadas
+                <p class="text-[11px] text-gray-500 leading-relaxed">Pessoas presentes frequentemente. Parques,
+                  calçadas
                   centrais, escolas.</p>
               </div>
             </label>
@@ -1003,7 +995,8 @@
             <div>
               <div class="flex items-center gap-2 mb-4">
                 <div class="w-2 h-2 rounded-full bg-[#D97706]"></div>
-                <h3 class="text-[10px] font-bold text-[#D97706] uppercase tracking-[0.2em]">Risco Alto (3 Pontos)</h3>
+                <h3 class="text-[10px] font-bold text-[#D97706] uppercase tracking-[0.2em]">Risco Alto (3 Pontos)
+                </h3>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item2-high3">
                 <label class="checkbox-card p-5 border-l-4 border-[#D97706] group item2-defect" data-value="3">
@@ -1012,7 +1005,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Defeito Significativo (>40%)</h4>
-                      <p class="text-[11px] text-gray-500">Comprometimento de 40% ou mais da área da seção transversal.
+                      <p class="text-[11px] text-gray-500">Comprometimento de 40% ou mais da área da seção
+                        transversal.
                       </p>
                     </div>
                   </div>
@@ -1023,7 +1017,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Copa Severamente Danificada</h4>
-                      <p class="text-[11px] text-gray-500">Mais de 30% da estrutura da copa com quebras ou podridão.</p>
+                      <p class="text-[11px] text-gray-500">Mais de 30% da estrutura da copa com quebras ou podridão.
+                      </p>
                     </div>
                   </div>
                 </label>
@@ -1033,7 +1028,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">União de Galhos com Fissura</h4>
-                      <p class="text-[11px] text-gray-500">Codominância ou união fraca com rachaduras visíveis na base.
+                      <p class="text-[11px] text-gray-500">Codominância ou união fraca com rachaduras visíveis na
+                        base.
                       </p>
                     </div>
                   </div>
@@ -1045,7 +1041,8 @@
             <div id="item2-moderate-section">
               <div class="flex items-center gap-2 mb-4">
                 <div class="w-2 h-2 rounded-full bg-[#4A7C59]"></div>
-                <h3 class="text-[10px] font-bold text-[#4A7C59] uppercase tracking-[0.2em]">Risco Moderado (2 Pontos)
+                <h3 class="text-[10px] font-bold text-[#4A7C59] uppercase tracking-[0.2em]">Risco Moderado (2
+                  Pontos)
                 </h3>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item2-moderate">
@@ -1055,7 +1052,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Defeito Moderado (30-40%)</h4>
-                      <p class="text-[11px] text-gray-500">Comprometimento entre 30% e 40% da circunferência total.</p>
+                      <p class="text-[11px] text-gray-500">Comprometimento entre 30% e 40% da circunferência total.
+                      </p>
                     </div>
                   </div>
                 </label>
@@ -1065,7 +1063,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Copa Danificada (10-30%)</h4>
-                      <p class="text-[11px] text-gray-500">Estrutura quebradiça ou podre atingindo parte da copa.</p>
+                      <p class="text-[11px] text-gray-500">Estrutura quebradiça ou podre atingindo parte da copa.
+                      </p>
                     </div>
                   </div>
                 </label>
@@ -1096,7 +1095,8 @@
             <div>
               <div class="flex items-center gap-2 mb-4">
                 <div class="w-2 h-2 rounded-full bg-gray-300"></div>
-                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Risco Baixo (1 Ponto)</h3>
+                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Risco Baixo (1 Ponto)
+                </h3>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="item2-low">
                 <label class="checkbox-card p-5 border-l-4 border-gray-100 group item2-defect" data-value="1">
@@ -1136,7 +1136,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Condição Saudável</h4>
-                      <p class="text-[11px] text-gray-500">Indivíduo vigoroso sem anomalias detectáveis nesta vistoria.
+                      <p class="text-[11px] text-gray-500">Indivíduo vigoroso sem anomalias detectáveis nesta
+                        vistoria.
                       </p>
                     </div>
                   </div>
@@ -1216,7 +1217,8 @@
                 placeholder="0.0">
               <span class="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-300">CM</span>
             </div>
-            <p class="mt-3 text-[11px] text-gray-400 italic">Opcional: Informe o valor exato para o relatório técnico.
+            <p class="mt-3 text-[11px] text-gray-400 italic">Opcional: Informe o valor exato para o relatório
+              técnico.
             </p>
           </div>
 
@@ -1284,7 +1286,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Movimentação Detectável</h4>
-                      <p class="text-[11px] text-gray-500 leading-relaxed">Instabilidade severa, inclinação progressiva
+                      <p class="text-[11px] text-gray-500 leading-relaxed">Instabilidade severa, inclinação
+                        progressiva
                         ou movimentação em ventos.</p>
                     </div>
                   </div>
@@ -1317,7 +1320,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Histórico de Poda Drástica</h4>
-                      <p class="text-[11px] text-gray-500">Topping, poda severa de raízes ou remoção excessiva de copa.
+                      <p class="text-[11px] text-gray-500">Topping, poda severa de raízes ou remoção excessiva de
+                        copa.
                       </p>
                     </div>
                   </div>
@@ -1328,7 +1332,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Intercorrências Recentes</h4>
-                      <p class="text-[11px] text-gray-500">Fogo, inundações ou impactos mecânicos acidentais recentes.
+                      <p class="text-[11px] text-gray-500">Fogo, inundações ou impactos mecânicos acidentais
+                        recentes.
                       </p>
                     </div>
                   </div>
@@ -1339,7 +1344,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Obras no Entorno</h4>
-                      <p class="text-[11px] text-gray-500">Escavações, compactação do solo ou impermeabilização recente.
+                      <p class="text-[11px] text-gray-500">Escavações, compactação do solo ou impermeabilização
+                        recente.
                       </p>
                     </div>
                   </div>
@@ -1350,7 +1356,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Pragas ou Doenças Ativas</h4>
-                      <p class="text-[11px] text-gray-500">Presença visível de fungos xilófagos, cupins ou patógenos.
+                      <p class="text-[11px] text-gray-500">Presença visível de fungos xilófagos, cupins ou
+                        patógenos.
                       </p>
                     </div>
                   </div>
@@ -1362,7 +1369,8 @@
             <div>
               <div class="flex items-center gap-2 mb-4">
                 <div class="w-2 h-2 rounded-full bg-gray-300"></div>
-                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Sem Fatores Adicionais</h3>
+                <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Sem Fatores Adicionais
+                </h3>
               </div>
               <div class="grid grid-cols-1 gap-3" id="item4-none">
                 <label class="checkbox-card p-5 border-l-4 border-gray-100 group item4-factor" data-value="0">
@@ -1539,7 +1547,8 @@
             class="p-8 bg-[#1A3A34]/5 rounded-3xl border border-[#1A3A34]/10 mb-10 text-center relative overflow-hidden">
             <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-[#4A7C59]/10 rounded-full blur-3xl"></div>
             <div class="relative">
-              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] mb-4 block">Classificação de
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] mb-4 block">Classificação
+                de
                 Risco</span>
               <div id="final-risk-badge" class="risk-badge mx-auto mb-6 scale-110">
                 <span class="text-2xl">🟢</span>
@@ -1592,7 +1601,8 @@
 
           <!-- Score Breakdown -->
           <div class="mb-10">
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 px-2">Detalhamento da Pontuação
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 px-2">Detalhamento da
+              Pontuação
             </h4>
             <div class="space-y-3">
               <div
@@ -1719,8 +1729,6 @@
         </div>
       </div>
     </div>
-  </main>
-
   </main>
 
   <script>
@@ -1906,17 +1914,21 @@
         });
       },
 
-      calculateScores() {
-        this.updateAssessmentData();
+      calculateScores(assessment = this.assessment) {
+        this.updateAssessmentData(); // Keep this to ensure `this.assessment` is up-to-date before using it or passing it.
 
-        const total = this.assessment.item1 + this.assessment.item2 + this.assessment.item3 + this.assessment.item4;
+        // Calculate scores
+        // The original logic for item2 and item4 scores is handled by calculateItem2Score and calculateItem4Score
+        // which update this.assessment.item2 and this.assessment.item4 directly.
+        // So, we use the values from the assessment object.
+        const total = (assessment.item1 || 0) + (assessment.item2 || 0) + (assessment.item3 || 0) + (assessment.item4 || 0);
         const percentage = (total / 10) * 100;
 
         // Update score displays
-        document.getElementById('score-item1').textContent = this.assessment.item1;
-        document.getElementById('score-item2').textContent = this.assessment.item2;
-        document.getElementById('score-item3').textContent = this.assessment.item3;
-        document.getElementById('score-item4').textContent = this.assessment.item4;
+        document.getElementById('score-item1').textContent = assessment.item1;
+        document.getElementById('score-item2').textContent = assessment.item2;
+        document.getElementById('score-item3').textContent = assessment.item3;
+        document.getElementById('score-item4').textContent = assessment.item4;
 
         // Update total and risk level
         const riskBadge = document.getElementById('risk-badge');
@@ -2275,241 +2287,147 @@
         this.showDashboard();
       },
 
-      generatePDF() {
-        this.updateAssessmentData();
-        const scores = this.calculateScores();
-        const { jsPDF } = window.jspdf;
+      async generatePDF(assessmentData = null) {
+        // Use provided data or current form data
+        const data = assessmentData || this.assessment;
 
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 20;
-        let y = margin;
-
-        // --- Brand Colors ---
-        const colors = {
-          primary: [26, 58, 52],    // #1A3A34
-          accent: [217, 119, 6],    // #D97706
-          text: [28, 28, 28],       // #1C1C1C
-          lightText: [100, 100, 100],
-          bg: [253, 251, 247],      // #FDFBF7 (Cream)
-          lowRisk: { bg: [236, 253, 245], text: [45, 106, 79] },   // #ECFDF5, #2D6A4F
-          modRisk: { bg: [255, 251, 235], text: [180, 83, 9] },    // #FFFBEB, #B45309
-          highRisk: { bg: [254, 242, 242], text: [153, 27, 27] }   // #FEF2F2, #991B1B
-        };
-
-        // --- Header ---
-        doc.setFillColor(...colors.primary);
-        doc.rect(0, 0, pageWidth, 60, 'F');
-
-        // App Name
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('times', 'bold');
-        doc.setFontSize(28);
-        doc.text('ARAON', margin, 25);
-
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...colors.accent);
-        doc.setCharSpace(2); // Tracking
-        doc.text('AVALIAÇÃO DE RISCO ARBÓREO', margin, 32);
-
-        // Report Title (Right aligned)
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'normal');
-        doc.setCharSpace(0);
-        doc.setFontSize(10);
-        doc.text(`Data: ${this.assessment.date} ${this.assessment.time}`, pageWidth - margin, 20, { align: 'right' });
-        doc.text(`Técnico: ${this.assessment.assessor || 'Não informado'}`, pageWidth - margin, 26, { align: 'right' });
-
-        y = 80;
-
-        // --- Risk Score Badge ---
-        let riskColors = colors.lowRisk;
-        let riskLabel = 'BAIXO';
-
-        if (scores.total >= 7) {
-          riskColors = colors.highRisk;
-          riskLabel = 'ALTO';
-        } else if (scores.total >= 4) {
-          riskColors = colors.modRisk;
-          riskLabel = 'MODERADO';
+        if (!assessmentData) {
+          this.updateAssessmentData();
         }
 
-        doc.setFillColor(...riskColors.bg);
-        doc.setDrawColor(...riskColors.text);
-        doc.setLineWidth(1);
-        doc.roundedRect(margin, y - 10, pageWidth - (margin * 2), 40, 4, 4, 'FD');
+        const scores = this.calculateScores(data);
+        const { jsPDF } = window.jspdf;
 
-        doc.setFont('times', 'bold');
-        doc.setFontSize(28);
-        doc.setTextColor(...riskColors.text);
-        doc.text(`${scores.total} PONTOS - RISCO ${riskLabel}`, pageWidth / 2, y + 16, { align: 'center' });
+        // Show Loading Toast
+        this.showToast('Gerando PDF...', 'info');
 
-        y += 50;
+        // Populate Template Page 1
+        const dateStr = data.date.split('-').reverse().join('/');
+        const assessorStr = data.assessor || 'Não informado';
 
-        // --- Helper: Draw Section Header ---
-        const drawSectionHeader = (title, positionY) => {
-          doc.setFont('times', 'bold');
-          doc.setFontSize(14);
-          doc.setTextColor(...colors.primary);
-          doc.text(title, margin, positionY);
+        document.getElementById('pdf-date-1').textContent = dateStr;
+        document.getElementById('pdf-assessor-1').textContent = assessorStr;
 
-          doc.setDrawColor(...colors.accent);
-          doc.setLineWidth(0.5);
-          doc.line(margin, positionY + 3, margin + 40, positionY + 3); // Underline
+        // Populate Template Page 2
+        document.getElementById('pdf-date-2').textContent = dateStr;
+        document.getElementById('pdf-assessor-2').textContent = assessorStr;
 
-          return positionY + 15;
-        };
+        // Risk Badge Logic (Page 1)
+        const riskElement = document.getElementById('pdf-risk-badge');
+        const riskScoreElement = document.getElementById('pdf-risk-score');
+        const riskLabelElement = document.getElementById('pdf-risk-label');
 
-        // --- Helper: Draw Key-Value ---
-        const drawKeyValue = (key, value, x, y) => {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(9);
-          doc.setTextColor(...colors.lightText);
-          doc.text(key.toUpperCase(), x, y);
+        riskScoreElement.textContent = scores.total;
 
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10);
-          doc.setTextColor(...colors.text);
-          doc.text(value || '-', x, y + 5);
-        };
+        // Remove old classes
+        riskElement.className = 'w-full p-4 rounded-2xl border-2 mb-8 flex flex-col items-center justify-center text-center';
 
-        // --- 1. Location & ID ---
-        y = drawSectionHeader('1. IDENTIFICAÇÃO', y);
+        if (scores.total >= 7) {
+          riskElement.classList.add('bg-[#FEF2F2]', 'border-[#991B1B]', 'text-[#991B1B]');
+          riskLabelElement.textContent = 'RISCO ALTO';
+        } else if (scores.total >= 4) {
+          riskElement.classList.add('bg-[#FFFBEB]', 'border-[#B45309]', 'text-[#B45309]');
+          riskLabelElement.textContent = 'RISCO MODERADO';
+        } else {
+          riskElement.classList.add('bg-[#ECFDF5]', 'border-[#2D6A4F]', 'text-[#2D6A4F]');
+          riskLabelElement.textContent = 'RISCO BAIXO';
+        }
 
-        drawKeyValue('Localização', this.assessment.location, margin, y);
-        drawKeyValue('Coordenadas', `${this.assessment.latitude || ''}, ${this.assessment.longitude || ''}`, margin + 80, y);
+        // Data Fields (Page 1)
+        document.getElementById('pdf-location').textContent = data.location || 'Não informado';
+        document.getElementById('pdf-coords').textContent = `${data.latitude || '-'}, ${data.longitude || '-'}`;
+        document.getElementById('pdf-species').textContent = data.species || 'Não informada';
+        document.getElementById('pdf-height').textContent = data.height ? `${data.height} m` : '-';
+        document.getElementById('pdf-dap').textContent = data.dap ? `${data.dap} cm` : '-';
 
-        y += 15;
+        // Scores (Page 1)
+        document.getElementById('pdf-score-1').textContent = data.item1;
+        document.getElementById('pdf-score-2').textContent = data.item2;
+        document.getElementById('pdf-score-3').textContent = data.item3;
+        document.getElementById('pdf-score-4').textContent = data.item4;
+        document.getElementById('pdf-score-total').textContent = scores.total;
 
-        // --- 2. Tree Data ---
-        y = drawSectionHeader('2. DADOS DA ÁRVORE', y);
+        // Checklist (Page 2)
+        const container = document.getElementById('pdf-checklist-container');
+        const emptyMsg = document.getElementById('pdf-checklist-empty');
+        container.innerHTML = '';
 
-        drawKeyValue('Espécie', this.assessment.species, margin, y);
-        drawKeyValue('Altura', this.assessment.height ? `${this.assessment.height}m` : '-', margin + 60, y);
-        drawKeyValue('DAP', this.assessment.dap ? `${this.assessment.dap}cm` : '-', margin + 100, y);
-        drawKeyValue('Diâmetro', this.assessment.diameterExact ? `${this.assessment.diameterExact}cm` : '-', margin + 140, y);
-
-        y += 20;
-
-        // --- 3. Score Table ---
-        y = drawSectionHeader('3. DETALHAMENTO DA PONTUAÇÃO', y);
-        y -= 5; // Adjustment for table start
-
-        const tableData = [
-          ['Item 1 - Avaliação dos Alvos', this.assessment.item1.toString()],
-          ['Item 2 - Condição da Árvore', this.assessment.item2.toString()],
-          ['Item 3 - Diâmetro do Defeito', this.assessment.item3.toString()],
-          ['Item 4 - Fatores Adicionais', this.assessment.item4.toString()],
-          ['TOTAL', scores.total.toString()]
-        ];
-
-        doc.autoTable({
-          startY: y,
-          head: [['Item Avaliado', 'Pontuação']],
-          body: tableData,
-          theme: 'grid',
-          headStyles: {
-            fillColor: colors.primary,
-            textColor: 255,
-            fontStyle: 'bold',
-            font: 'helvetica',
-            halign: 'left'
-          },
-          bodyStyles: {
-            textColor: colors.text,
-            font: 'helvetica'
-          },
-          alternateRowStyles: {
-            fillColor: [249, 250, 251]
-          },
-          columnStyles: {
-            0: { cellWidth: 'auto' },
-            1: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }
-          },
-          margin: { left: margin, right: margin }
-        });
-
-        y = doc.lastAutoTable.finalY + 20;
-
-        // --- 4. Checklist ---
-        if (y > pageHeight - 60) { doc.addPage(); y = margin + 20; }
-
-        y = drawSectionHeader('4. CHECKLIST DE VERIFICAÇÃO', y);
-
-        const checkedItems = Object.entries(this.assessment.checklist)
+        const checkedItems = Object.entries(data.checklist)
           .filter(([key, value]) => value)
           .map(([key]) => this.formatChecklistLabel(key));
 
         if (checkedItems.length > 0) {
-          // Two column layout for checklist
-          const colWidth = (pageWidth - margin * 2) / 2;
-          let currentCol = 0;
-          let startY = y;
-
-          checkedItems.forEach((item, index) => {
-            if (y > pageHeight - 40) {
-              doc.addPage();
-              y = margin + 20;
-              startY = y;
-            }
-
-            // Draw bullet custom
-            doc.setFillColor(...colors.secondary);
-            doc.circle(margin + (currentCol * colWidth) + 2, y - 1, 1, 'F');
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(...colors.text);
-            doc.text(item, margin + (currentCol * colWidth) + 8, y);
-
-            y += 8;
+          emptyMsg.classList.add('hidden');
+          checkedItems.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'flex items-start gap-2 mb-2 break-inside-avoid';
+            div.innerHTML = `
+              <div class="mt-1 min-w-[16px] h-4 rounded-full bg-[#4A7C59]/10 flex items-center justify-center text-[#4A7C59]">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <span class="text-sm text-[#1C1C1C]">${item}</span>
+            `;
+            container.appendChild(div);
           });
-
-          // Reset Y for next section if needed (not strictly necessary with float layout but good for now)
-          y += 10;
         } else {
-          doc.setFont('helvetica', 'italic');
-          doc.setFontSize(10);
-          doc.setTextColor(...colors.lightText);
-          doc.text('Nenhum defeito ou condição crítica assinalada.', margin, y);
-          y += 15;
+          emptyMsg.classList.remove('hidden');
         }
 
-        // --- 5. Observations ---
-        if (y > pageHeight - 60) { doc.addPage(); y = margin + 20; }
+        // Observations (Page 2)
+        document.getElementById('pdf-observations').textContent = data.observations || 'Nenhuma observação registrada.';
 
-        y += 10;
-        y = drawSectionHeader('5. OBSERVAÇÕES TÉCNICAS', y);
+        // Render PDF
+        const page1 = document.getElementById('pdf-page-1');
+        const page2 = document.getElementById('pdf-page-2');
 
-        const obsText = this.assessment.observations || 'Nenhuma observação registrada.';
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(...colors.text);
+        try {
+          // Temporarily show elements
+          page1.style.opacity = '1';
+          page2.style.opacity = '1';
 
-        const splitObs = doc.splitTextToSize(obsText, pageWidth - (margin * 2));
-        doc.text(splitObs, margin, y);
+          // PDF Config
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        // --- Footer ---
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i);
-          doc.setDrawColor(200, 200, 200);
-          doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+          const options = {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 794,
+            windowHeight: 1123
+          };
 
-          doc.setFontSize(8);
-          doc.setTextColor(150, 150, 150);
-          doc.text(`Gerado por ARAON - Sistema de Avaliação Arbórea`, margin, pageHeight - 8);
-          doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+          // Render Page 1
+          const canvas1 = await html2canvas(page1, options);
+          const imgData1 = canvas1.toDataURL('image/jpeg', 0.95);
+          const imgProps1 = pdf.getImageProperties(imgData1);
+          const imgHeight1 = (imgProps1.height * pdfWidth) / imgProps1.width;
+          pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, imgHeight1);
+
+          // Render Page 2
+          pdf.addPage();
+          const canvas2 = await html2canvas(page2, options);
+          const imgData2 = canvas2.toDataURL('image/jpeg', 0.95);
+          const imgProps2 = pdf.getImageProperties(imgData2);
+          const imgHeight2 = (imgProps2.height * pdfWidth) / imgProps2.width;
+          pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth, imgHeight2);
+
+          // Cleanup
+          page1.style.opacity = '0';
+          page2.style.opacity = '0';
+
+          pdf.save(`ARAON-Avaliacao-${data.date}.pdf`);
+
+          this.showToast('PDF gerado com sucesso!', 'success');
+          if (!assessmentData) this.saveDraft();
+
+        } catch (error) {
+          console.error('PDF Generation Error:', error);
+          this.showToast('Erro ao gerar PDF', 'error');
+          page1.style.opacity = '0';
+          page2.style.opacity = '0';
         }
-
-        // Save
-
-        doc.save(`avaliacao-arborea-${this.assessment.date}.pdf`);
-
-        // Save to history
-        this.saveDraft();
       },
 
       loadHistory() {
@@ -2531,7 +2449,7 @@
         const todayCount = this.history.filter(h => h.date === today).length;
         const monthCount = this.history.filter(h => h.date && h.date.startsWith(currentMonth)).length;
 
-        const getTotalScore = (h) => h.item1 + h.item2 + h.item3 + h.item4;
+        const getTotalScore = (h) => (h.item1 || 0) + (h.item2 || 0) + (h.item3 || 0) + (h.item4 || 0);
         const highRiskCount = this.history.filter(h => getTotalScore(h) >= 7).length;
 
         document.getElementById('stat-total').textContent = total;
@@ -2539,7 +2457,7 @@
         document.getElementById('stat-month').textContent = monthCount;
         document.getElementById('stat-high-risk').textContent = highRiskCount;
 
-        // Risk distribution
+        // Risk distribution stats
         const lowRisk = this.history.filter(h => getTotalScore(h) <= 3).length;
         const moderateRisk = this.history.filter(h => {
           const score = getTotalScore(h);
@@ -2547,11 +2465,93 @@
         }).length;
         const highRisk = this.history.filter(h => getTotalScore(h) >= 7).length;
 
-        document.getElementById('risk-low-count').textContent = lowRisk;
-        document.getElementById('risk-moderate-count').textContent = moderateRisk;
-        document.getElementById('risk-high-count').textContent = highRisk;
+        // Chart.js Implementation
+        const ctx = document.getElementById('riskChart').getContext('2d');
 
-        // Recent assessments
+        if (window.myRiskChart) {
+          window.myRiskChart.destroy();
+        }
+
+        const data = {
+          labels: ['Baixo', 'Moderado', 'Alto'],
+          datasets: [{
+            data: [lowRisk, moderateRisk, highRisk],
+            backgroundColor: [
+              '#2D6A4F', // Green
+              '#B45309', // Ochre
+              '#991B1B'  // Red
+            ],
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 4
+          }]
+        };
+
+        window.myRiskChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+              legend: {
+                display: false // We use custom legend
+              },
+              tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#1A3A34',
+                bodyColor: '#1A3A34',
+                borderColor: '#E5E7EB',
+                borderWidth: 1,
+                padding: 12,
+                boxPadding: 4,
+                callbacks: {
+                  label: function (context) {
+                    const label = context.label || '';
+                    const value = context.raw || 0;
+                    const total = context.chart._metasets[context.datasetIndex].total;
+                    const percentage = Math.round((value / total) * 100) + '%';
+                    return `${label}: ${value} (${percentage})`;
+                  }
+                }
+              }
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true
+            }
+          }
+        });
+
+        // Update Custom Legend
+        const legendContainer = document.getElementById('risk-legend');
+        legendContainer.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-[#2D6A4F]"></div>
+            <div>
+              <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Baixo</p>
+              <p class="text-xs text-gray-500">${lowRisk} avaliações</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-[#B45309]"></div>
+            <div>
+              <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Moderado</p>
+              <p class="text-xs text-gray-500">${moderateRisk} avaliações</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-[#991B1B]"></div>
+            <div>
+              <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Alto</p>
+              <p class="text-xs text-gray-500">${highRisk} avaliações</p>
+            </div>
+          </div>
+        `;
+
+        // Recent assessments list...
+
         const recentContainer = document.getElementById('recent-assessments');
         const recent = this.history.slice(0, 5);
 
@@ -2575,10 +2575,25 @@
                 <div class="text-right">
                   <span class="${riskClass} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">${riskLabel}</span>
                   <div class="text-xl font-display font-bold text-[#1A3A34] mt-1">${score} pts</div>
+                  <div class="flex items-center gap-2 mt-2 justify-end">
+                    <button onclick="event.stopPropagation(); app.downloadPDF('${h.id}')" class="p-1.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors" title="Gerar PDF">
+                      <i data-lucide="file-down" class="w-3 h-3"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); app.editAssessment('${h.id}')" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Editar">
+                      <i data-lucide="pencil" class="w-3 h-3"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); app.duplicateAssessment('${h.id}')" class="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors" title="Duplicar">
+                      <i data-lucide="copy" class="w-3 h-3"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); app.confirmDeleteAssessment('${h.id}')" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Deletar">
+                      <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             `;
           }).join('');
+          if (window.lucide) window.lucide.createIcons();
         } else {
           recentContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhuma avaliação realizada ainda</p>';
         }
@@ -2632,6 +2647,9 @@
                   <span class="${riskClass} px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">${riskLabel}</span>
                   <div class="text-2xl font-display font-bold text-[#1A3A34]">${score} PONTOS</div>
                   <div class="flex items-center gap-2 mt-2">
+                    <button onclick="event.stopPropagation(); app.downloadPDF('${h.id}')" class="p-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors" title="Gerar PDF">
+                      <i data-lucide="file-down" class="w-4 h-4"></i>
+                    </button>
                     <button onclick="event.stopPropagation(); app.editAssessment('${h.id}')" class="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Editar">
                       <i data-lucide="pencil" class="w-4 h-4"></i>
                     </button>
@@ -2680,20 +2698,17 @@
             r.checked = false;
             r.closest('.radio-card')?.classList.remove('selected');
           });
+
           const item1Radio = document.querySelector(`input[name="item1"][value="${assessment.item1}"]`);
           if (item1Radio) {
             item1Radio.checked = true;
             item1Radio.closest('.radio-card').classList.add('selected');
           }
+
           const item3Radio = document.querySelector(`input[name="item3"][value="${assessment.item3}"]`);
           if (item3Radio) {
             item3Radio.checked = true;
             item3Radio.closest('.radio-card').classList.add('selected');
-          }
-          const item4Radio = document.querySelector(`input[name="item4"][value="${assessment.item4}"]`);
-          if (item4Radio) {
-            item4Radio.checked = true;
-            item4Radio.closest('.radio-card').classList.add('selected');
           }
 
           // Reset Item 2 checkboxes
@@ -2791,6 +2806,15 @@
         this.showToast('Avaliação duplicada com sucesso', 'success');
       },
 
+      downloadPDF(id) {
+        const assessment = this.history.find(h => h.id === id);
+        if (assessment) {
+          this.generatePDF(assessment);
+        } else {
+          this.showToast('Erro ao encontrar avaliação.', 'error');
+        }
+      },
+
       showToast(message, type = 'info') {
         const toast = document.createElement('div');
         const colors = {
@@ -2828,6 +2852,161 @@
       app.init();
     });
   </script>
+  <!-- Hidden PDF Template Page 1 -->
+  <div id="pdf-page-1" class="fixed top-0 left-0 w-[210mm] min-h-[297mm] bg-white pointer-events-none opacity-0 z-[-1]"
+    style="font-family: 'Outfit', sans-serif;">
+    <!-- Header -->
+    <div class="bg-[#1A3A34] text-white p-12 flex justify-between items-start">
+      <div>
+        <h1 class="font-display text-5xl font-bold mb-2 tracking-tight">ARAON</h1>
+        <p class="text-[#D97706] text-sm font-bold tracking-[0.2em] uppercase">Avaliação de Risco Arbóreo</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs opacity-60 mb-1 uppercase tracking-wider">Data do Relatório</p>
+        <p class="font-normal text-lg" id="pdf-date-1">DD/MM/YYYY</p>
+        <p class="text-xs opacity-60 mt-3 mb-1 uppercase tracking-wider">Técnico Responsável</p>
+        <p class="font-normal text-lg" id="pdf-assessor-1">Nome do Técnico</p>
+      </div>
+    </div>
+
+    <div class="p-12">
+      <!-- Risk Badge -->
+      <div id="pdf-risk-badge"
+        class="w-full p-4 rounded-2xl border-2 mb-8 flex flex-col items-center justify-center text-center">
+        <span id="pdf-risk-score" class="font-display text-4xl font-bold mb-1">0</span>
+        <span id="pdf-risk-label" class="text-sm font-bold uppercase tracking-widest">RISCO BAIXO</span>
+      </div>
+
+      <!-- 1. IDENTIFICAÇÃO -->
+      <div class="mb-10">
+        <h2 class="font-display text-2xl font-bold text-[#1A3A34] mb-4 border-b-2 border-[#D97706] pb-2 inline-block">1.
+          IDENTIFICAÇÃO</h2>
+        <div class="grid grid-cols-2 gap-8">
+          <div>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Localização</p>
+            <p id="pdf-location" class="text-lg font-bold text-[#1C1C1C]">Local</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Coordenadas</p>
+            <p id="pdf-coords" class="text-lg font-bold text-[#1C1C1C]">-</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. DADOS DA ÁRVORE -->
+      <div class="mb-10">
+        <h2 class="font-display text-2xl font-bold text-[#1A3A34] mb-4 border-b-2 border-[#D97706] pb-2 inline-block">2.
+          DADOS DA ÁRVORE</h2>
+        <div class="grid grid-cols-4 gap-4">
+          <div class="col-span-2">
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Espécie</p>
+            <p id="pdf-species" class="text-lg font-bold text-[#1C1C1C]">Espécie</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Altura</p>
+            <p id="pdf-height" class="text-lg font-bold text-[#1C1C1C]">- m</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">DAP</p>
+            <p id="pdf-dap" class="text-lg font-bold text-[#1C1C1C]">- cm</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. DETALHAMENTO DA PONTUAÇÃO -->
+      <div class="mb-10">
+        <h2 class="font-display text-2xl font-bold text-[#1A3A34] mb-4 border-b-2 border-[#D97706] pb-2 inline-block">3.
+          DETALHAMENTO DA PONTUAÇÃO</h2>
+        <div class="border border-gray-200 rounded-xl overflow-hidden">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-[#1A3A34] text-white uppercase text-[10px] font-bold tracking-wider">
+              <tr>
+                <th class="px-6 py-4">Item Avaliado</th>
+                <th class="px-6 py-4 text-center w-32">Pontuação</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr class="bg-gray-50/50">
+                <td class="px-6 py-4 font-medium text-[#1A3A34]">Item 1 - Avaliação dos Alvos</td>
+                <td id="pdf-score-1" class="px-6 py-4 text-center font-bold text-[#1A3A34]">0</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 font-medium text-[#1A3A34]">Item 2 - Condição da Árvore</td>
+                <td id="pdf-score-2" class="px-6 py-4 text-center font-bold text-[#1A3A34]">0</td>
+              </tr>
+              <tr class="bg-gray-50/50">
+                <td class="px-6 py-4 font-medium text-[#1A3A34]">Item 3 - Diâmetro do Defeito</td>
+                <td id="pdf-score-3" class="px-6 py-4 text-center font-bold text-[#1A3A34]">0</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 font-medium text-[#1A3A34]">Item 4 - Fatores Adicionais</td>
+                <td id="pdf-score-4" class="px-6 py-4 text-center font-bold text-[#1A3A34]">0</td>
+              </tr>
+              <tr class="bg-gray-100 font-bold">
+                <td class="px-6 py-4 text-[#1A3A34] uppercase tracking-wider">TOTAL</td>
+                <td id="pdf-score-total" class="px-6 py-4 text-center text-xl text-[#1A3A34]">0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Footer Page 1 -->
+      <div
+        class="border-t border-gray-200 pt-4 flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-auto">
+        <span>Gerado por ARAON - Sistema de Avaliação Arbórea</span>
+        <span>Página 1 de 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden PDF Template Page 2 -->
+  <div id="pdf-page-2" class="fixed top-0 left-0 w-[210mm] min-h-[297mm] bg-white pointer-events-none opacity-0 z-[-1]"
+    style="font-family: 'Outfit', sans-serif;">
+    <!-- Header Page 2 -->
+    <div class="bg-[#1A3A34] text-white p-12 flex justify-between items-start">
+      <div>
+        <h1 class="font-display text-5xl font-bold mb-2 tracking-tight">ARAON</h1>
+        <p class="text-[#D97706] text-sm font-bold tracking-[0.2em] uppercase">Avaliação de Risco Arbóreo</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs opacity-60 mb-1 uppercase tracking-wider">Data do Relatório</p>
+        <p class="font-normal text-lg" id="pdf-date-2">DD/MM/YYYY</p>
+        <p class="text-xs opacity-60 mt-3 mb-1 uppercase tracking-wider">Técnico Responsável</p>
+        <p class="font-normal text-lg" id="pdf-assessor-2">Nome do Técnico</p>
+      </div>
+    </div>
+
+    <div class="p-12">
+      <!-- 4. CHECKLIST -->
+      <div class="mb-10">
+        <h2 class="font-display text-2xl font-bold text-[#1A3A34] mb-4 border-b-2 border-[#D97706] pb-2 inline-block">4.
+          CHECKLIST DE VERIFICAÇÃO</h2>
+        <div id="pdf-checklist-container" class="grid grid-cols-2 gap-x-8 gap-y-2">
+          <!-- Populated dynamically -->
+        </div>
+        <p id="pdf-checklist-empty" class="text-gray-400 italic text-sm hidden">Nenhum defeito ou condição crítica
+          assinalada.</p>
+      </div>
+
+      <!-- 5. OBSERVAÇÕES -->
+      <div class="mb-12">
+        <h2 class="font-display text-2xl font-bold text-[#1A3A34] mb-4 border-b-2 border-[#D97706] pb-2 inline-block">5.
+          OBSERVAÇÕES TÉCNICAS</h2>
+        <div id="pdf-observations"
+          class="p-6 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+          Nenhuma observação registrada.
+        </div>
+      </div>
+
+      <!-- Footer Page 2 -->
+      <div
+        class="border-t border-gray-200 pt-4 flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-auto">
+        <span>Gerado por ARAON - Sistema de Avaliação Arbórea</span>
+        <span>Página 2 de 2</span>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
