@@ -454,7 +454,7 @@
       width: 0 !important;
       height: 0 !important;
     }
-  
+
     /* checklist-card - Isolated Style */
     .checkbox-card {
       background: white;
@@ -467,16 +467,20 @@
       margin-bottom: 0.5rem;
       cursor: pointer;
     }
+
     .checkbox-card:hover {
       border-color: var(--color-secondary);
       background: #F0F7F2;
     }
+
     .checkbox-card.checked {
       border-color: var(--color-primary);
       background: #F0F7F2;
       box-shadow: 0 10px 20px -5px rgba(26, 58, 52, 0.1);
     }
-    .checkbox-card::before, .checkbox-card::after {
+
+    .checkbox-card::before,
+    .checkbox-card::after {
       content: none !important;
       display: none !important;
     }
@@ -485,7 +489,6 @@
     .checkbox-card.border-l-4 {
       border-left-width: 4px !important;
     }
-
   </style>
 </head>
 
@@ -1102,8 +1105,8 @@
                     <div class="selection-indicator"></div>
                     <div class="flex-1">
                       <h4 class="font-bold text-[#1A3A34] mb-1">Defeito Leve (&lt;30%)</h4>
-                          <p class="text-[11px] text-gray-500">Sinais superficiais sem comprometimento estrutural grave.
-                          </p>
+                      <p class="text-[11px] text-gray-500">Sinais superficiais sem comprometimento estrutural grave.
+                      </p>
                     </div>
                   </div>
                 </label>
@@ -1645,6 +1648,28 @@
                   <!-- JS Populated -->
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Checklist Summary -->
+          <div class="mb-10">
+            <div class="flex items-center gap-3 mb-4">
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest px-2">Itens de Verificação</h4>
+              <span id="summary-checklist-count"
+                class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
+            </div>
+            <div class="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm">
+              <div id="summary-checklist" class="flex flex-wrap gap-2">
+                <!-- JS Populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Observations Summary -->
+          <div class="mb-10">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 px-2">Observações</h4>
+            <div class="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm text-sm text-gray-600 italic">
+              <span id="summary-observations">-</span>
             </div>
           </div>
 
@@ -2257,172 +2282,230 @@
 
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 20;
         let y = margin;
 
-        // Header
-        doc.setFillColor(26, 58, 52); // Dark Forest Green
-        doc.rect(0, 0, pageWidth, 50, 'F');
+        // --- Brand Colors ---
+        const colors = {
+          primary: [26, 58, 52],    // #1A3A34
+          accent: [217, 119, 6],    // #D97706
+          text: [28, 28, 28],       // #1C1C1C
+          lightText: [100, 100, 100],
+          bg: [253, 251, 247],      // #FDFBF7 (Cream)
+          lowRisk: { bg: [236, 253, 245], text: [45, 106, 79] },   // #ECFDF5, #2D6A4F
+          modRisk: { bg: [255, 251, 235], text: [180, 83, 9] },    // #FFFBEB, #B45309
+          highRisk: { bg: [254, 242, 242], text: [153, 27, 27] }   // #FEF2F2, #991B1B
+        };
 
+        // --- Header ---
+        doc.setFillColor(...colors.primary);
+        doc.rect(0, 0, pageWidth, 60, 'F');
+
+        // App Name
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text('RELATÓRIO DE AVALIAÇÃO', margin, y + 15);
-        doc.text('DE RISCO ARBÓREO', margin, y + 30);
+        doc.setFont('times', 'bold');
+        doc.setFontSize(28);
+        doc.text('ARAON', margin, 25);
 
         doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Data: ${this.assessment.date} ${this.assessment.time}`, pageWidth - margin - 50, y + 15);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...colors.accent);
+        doc.setCharSpace(2); // Tracking
+        doc.text('AVALIAÇÃO DE RISCO ARBÓREO', margin, 32);
 
-        y = 70;
-
-        // Risk Level Box
-        const riskLevel = scores.total >= 7 ? 'ALTO' : scores.total >= 4 ? 'MODERADO' : 'BAIXO';
-        const riskColor = scores.total >= 7 ? [153, 27, 27] : scores.total >= 4 ? [217, 119, 6] : [74, 124, 89];
-
-        doc.setFillColor(...riskColor);
-        doc.roundedRect(margin, y, pageWidth - margin * 2, 40, 5, 5, 'F');
-
+        // Report Title (Right aligned)
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${scores.total} PONTOS - RISCO ${riskLevel}`, margin + 10, y + 25);
-
-        y += 55;
-
-        // Sections Header Color
-        const sectionHeaderColor = [26, 58, 52];
-
-        // Location Section
-        doc.setTextColor(...sectionHeaderColor);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('1. LOCALIZAÇÃO', margin, y);
-
-        y += 10;
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Local: ${this.assessment.location || 'Não informado'}`, margin, y);
-        y += 7;
-        doc.text(`Coordenadas: ${this.assessment.latitude || '-'}, ${this.assessment.longitude || '-'}`, margin, y);
-        y += 7;
-        doc.text(`Avaliador: ${this.assessment.assessor || 'Não informado'}`, margin, y);
+        doc.setCharSpace(0);
+        doc.setFontSize(10);
+        doc.text(`Data: ${this.assessment.date} ${this.assessment.time}`, pageWidth - margin, 20, { align: 'right' });
+        doc.text(`Técnico: ${this.assessment.assessor || 'Não informado'}`, pageWidth - margin, 26, { align: 'right' });
+
+        y = 80;
+
+        // --- Risk Score Badge ---
+        let riskColors = colors.lowRisk;
+        let riskLabel = 'BAIXO';
+
+        if (scores.total >= 7) {
+          riskColors = colors.highRisk;
+          riskLabel = 'ALTO';
+        } else if (scores.total >= 4) {
+          riskColors = colors.modRisk;
+          riskLabel = 'MODERADO';
+        }
+
+        doc.setFillColor(...riskColors.bg);
+        doc.setDrawColor(...riskColors.text);
+        doc.setLineWidth(1);
+        doc.roundedRect(margin, y - 10, pageWidth - (margin * 2), 40, 4, 4, 'FD');
+
+        doc.setFont('times', 'bold');
+        doc.setFontSize(28);
+        doc.setTextColor(...riskColors.text);
+        doc.text(`${scores.total} PONTOS - RISCO ${riskLabel}`, pageWidth / 2, y + 16, { align: 'center' });
+
+        y += 50;
+
+        // --- Helper: Draw Section Header ---
+        const drawSectionHeader = (title, positionY) => {
+          doc.setFont('times', 'bold');
+          doc.setFontSize(14);
+          doc.setTextColor(...colors.primary);
+          doc.text(title, margin, positionY);
+
+          doc.setDrawColor(...colors.accent);
+          doc.setLineWidth(0.5);
+          doc.line(margin, positionY + 3, margin + 40, positionY + 3); // Underline
+
+          return positionY + 15;
+        };
+
+        // --- Helper: Draw Key-Value ---
+        const drawKeyValue = (key, value, x, y) => {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(...colors.lightText);
+          doc.text(key.toUpperCase(), x, y);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(...colors.text);
+          doc.text(value || '-', x, y + 5);
+        };
+
+        // --- 1. Location & ID ---
+        y = drawSectionHeader('1. IDENTIFICAÇÃO', y);
+
+        drawKeyValue('Localização', this.assessment.location, margin, y);
+        drawKeyValue('Coordenadas', `${this.assessment.latitude || ''}, ${this.assessment.longitude || ''}`, margin + 80, y);
 
         y += 15;
 
-        // Tree Data Section
-        doc.setTextColor(45, 95, 126);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('2. DADOS DA ÁRVORE', margin, y);
+        // --- 2. Tree Data ---
+        y = drawSectionHeader('2. DADOS DA ÁRVORE', y);
 
-        y += 10;
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Espécie: ${this.assessment.species || 'Não informada'}`, margin, y);
-        y += 7;
-        doc.text(`Altura estimada: ${this.assessment.height ? this.assessment.height + 'm' : 'Não informada'}`, margin, y);
-        y += 7;
-        doc.text(`DAP: ${this.assessment.dap ? this.assessment.dap + 'cm' : 'Não informado'}`, margin, y);
+        drawKeyValue('Espécie', this.assessment.species, margin, y);
+        drawKeyValue('Altura', this.assessment.height ? `${this.assessment.height}m` : '-', margin + 60, y);
+        drawKeyValue('DAP', this.assessment.dap ? `${this.assessment.dap}cm` : '-', margin + 100, y);
+        drawKeyValue('Diâmetro', this.assessment.diameterExact ? `${this.assessment.diameterExact}cm` : '-', margin + 140, y);
 
-        y += 15;
+        y += 20;
 
-        // Score Table
-        doc.setTextColor(45, 95, 126);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('3. PONTUAÇÃO', margin, y);
-
-        y += 5;
+        // --- 3. Score Table ---
+        y = drawSectionHeader('3. DETALHAMENTO DA PONTUAÇÃO', y);
+        y -= 5; // Adjustment for table start
 
         const tableData = [
           ['Item 1 - Avaliação dos Alvos', this.assessment.item1.toString()],
           ['Item 2 - Condição da Árvore', this.assessment.item2.toString()],
-          ['Item 3 - Diâmetro Defeituoso', this.assessment.item3.toString()],
-          ['Item 4 - Outros Fatores', this.assessment.item4.toString()],
+          ['Item 3 - Diâmetro do Defeito', this.assessment.item3.toString()],
+          ['Item 4 - Fatores Adicionais', this.assessment.item4.toString()],
           ['TOTAL', scores.total.toString()]
         ];
 
         doc.autoTable({
           startY: y,
-          head: [['Item', 'Pontuação']],
+          head: [['Item Avaliado', 'Pontuação']],
           body: tableData,
-          theme: 'striped',
-          headStyles: { fillColor: [45, 95, 126] },
-          styles: { fontSize: 10 },
+          theme: 'grid',
+          headStyles: {
+            fillColor: colors.primary,
+            textColor: 255,
+            fontStyle: 'bold',
+            font: 'helvetica',
+            halign: 'left'
+          },
+          bodyStyles: {
+            textColor: colors.text,
+            font: 'helvetica'
+          },
+          alternateRowStyles: {
+            fillColor: [249, 250, 251]
+          },
+          columnStyles: {
+            0: { cellWidth: 'auto' },
+            1: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }
+          },
           margin: { left: margin, right: margin }
         });
 
-        y = doc.lastAutoTable.finalY + 15;
+        y = doc.lastAutoTable.finalY + 20;
 
-        // Checklist
-        if (y > 250) {
-          doc.addPage();
-          y = margin;
-        }
+        // --- 4. Checklist ---
+        if (y > pageHeight - 60) { doc.addPage(); y = margin + 20; }
 
-        doc.setTextColor(45, 95, 126);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('4. CHECKLIST DE VERIFICAÇÃO', margin, y);
-
-        y += 10;
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'normal');
+        y = drawSectionHeader('4. CHECKLIST DE VERIFICAÇÃO', y);
 
         const checkedItems = Object.entries(this.assessment.checklist)
           .filter(([key, value]) => value)
           .map(([key]) => this.formatChecklistLabel(key));
 
         if (checkedItems.length > 0) {
+          // Two column layout for checklist
+          const colWidth = (pageWidth - margin * 2) / 2;
+          let currentCol = 0;
+          let startY = y;
+
           checkedItems.forEach((item, index) => {
-            if (y > 270) {
+            if (y > pageHeight - 40) {
               doc.addPage();
-              y = margin;
+              y = margin + 20;
+              startY = y;
             }
-            doc.text(`☑ ${item}`, margin + 5, y);
-            y += 7;
+
+            // Draw bullet custom
+            doc.setFillColor(...colors.secondary);
+            doc.circle(margin + (currentCol * colWidth) + 2, y - 1, 1, 'F');
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(...colors.text);
+            doc.text(item, margin + (currentCol * colWidth) + 8, y);
+
+            y += 8;
           });
+
+          // Reset Y for next section if needed (not strictly necessary with float layout but good for now)
+          y += 10;
         } else {
-          doc.text('Nenhum item marcado', margin + 5, y);
-          y += 7;
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(10);
+          doc.setTextColor(...colors.lightText);
+          doc.text('Nenhum defeito ou condição crítica assinalada.', margin, y);
+          y += 15;
         }
 
-        // Observations
-        if (y > 250) {
-          doc.addPage();
-          y = margin;
-        }
+        // --- 5. Observations ---
+        if (y > pageHeight - 60) { doc.addPage(); y = margin + 20; }
 
         y += 10;
-        doc.setTextColor(45, 95, 126);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('5. OBSERVAÇÕES', margin, y);
+        y = drawSectionHeader('5. OBSERVAÇÕES TÉCNICAS', y);
 
-        y += 10;
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
+        const obsText = this.assessment.observations || 'Nenhuma observação registrada.';
         doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...colors.text);
 
-        const observations = this.assessment.observations || 'Nenhuma observação adicionada';
-        const splitObservations = doc.splitTextToSize(observations, pageWidth - margin * 2);
-        doc.text(splitObservations, margin, y);
+        const splitObs = doc.splitTextToSize(obsText, pageWidth - (margin * 2));
+        doc.text(splitObs, margin, y);
 
-        // Footer
+        // --- Footer ---
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
+          doc.setDrawColor(200, 200, 200);
+          doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+
           doc.setFontSize(8);
-          doc.setTextColor(128, 128, 128);
-          doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin - 30, doc.internal.pageSize.getHeight() - 10);
-          doc.text('Sistema de Avaliação Arbórea', margin, doc.internal.pageSize.getHeight() - 10);
+          doc.setTextColor(150, 150, 150);
+          doc.text(`Gerado por ARAON - Sistema de Avaliação Arbórea`, margin, pageHeight - 8);
+          doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
         }
 
         // Save
+
         doc.save(`avaliacao-arborea-${this.assessment.date}.pdf`);
 
         // Save to history
@@ -2531,8 +2614,8 @@
             const riskLabel = score >= 7 ? 'Alto' : score >= 4 ? 'Moderado' : 'Baixo';
 
             return `
-              <div class="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl hover:shadow-lg transition-all cursor-pointer group mb-4" onclick="app.loadAssessment('${h.id}')">
-                <div class="flex items-center gap-5">
+              <div class="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl hover:shadow-lg transition-all group mb-4">
+                <div class="flex items-center gap-5 flex-1 cursor-pointer" onclick="app.loadAssessment('${h.id}')">
                   <div class="w-14 h-14 rounded-2xl bg-[#1A3A34]/5 flex items-center justify-center text-[#1A3A34] text-2xl group-hover:bg-[#1A3A34] group-hover:text-white transition-all">
                     <i data-lucide="file-text"></i>
                   </div>
@@ -2545,9 +2628,20 @@
                     </div>
                   </div>
                 </div>
-                <div class="text-right">
+                <div class="text-right flex flex-col items-end gap-2">
                   <span class="${riskClass} px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">${riskLabel}</span>
-                  <div class="text-2xl font-display font-bold text-[#1A3A34] mt-2">${score} PONTOS</div>
+                  <div class="text-2xl font-display font-bold text-[#1A3A34]">${score} PONTOS</div>
+                  <div class="flex items-center gap-2 mt-2">
+                    <button onclick="event.stopPropagation(); app.editAssessment('${h.id}')" class="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Editar">
+                      <i data-lucide="pencil" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); app.duplicateAssessment('${h.id}')" class="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors" title="Duplicar">
+                      <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); app.confirmDeleteAssessment('${h.id}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Deletar">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             `;
@@ -2633,12 +2727,99 @@
       },
 
       deleteAssessment(id) {
-        if (confirm('Tem certeza que deseja excluir esta avaliação?')) {
-          this.history = this.history.filter(h => h.id !== id);
-          this.saveHistory();
-          this.updateDashboard();
-          this.renderHistory();
-        }
+        this.history = this.history.filter(h => h.id !== id);
+        this.saveHistory();
+        this.updateDashboard();
+        this.renderHistory();
+        this.showToast('Avaliação excluída com sucesso', 'success');
+      },
+
+      confirmDeleteAssessment(id) {
+        const assessment = this.history.find(h => h.id === id);
+        if (!assessment) return;
+
+        const modal = document.createElement('div');
+        modal.id = 'delete-modal';
+        modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center';
+        modal.innerHTML = `
+          <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all scale-100">
+            <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600 mx-auto mb-6">
+              <i data-lucide="trash-2" class="w-8 h-8"></i>
+            </div>
+            <h3 class="font-display text-2xl font-bold text-[#1A3A34] text-center mb-2">Excluir Avaliação</h3>
+            <p class="text-gray-500 text-center mb-6">Tem certeza que deseja excluir a avaliação de <strong>${assessment.location || 'Local não informado'}</strong>? Esta ação não pode ser desfeita.</p>
+            <div class="flex gap-3">
+              <button onclick="app.closeDeleteModal()" class="flex-1 glass-btn glass-btn-secondary py-3">Cancelar</button>
+              <button onclick="app.deleteAssessment('${id}'); app.closeDeleteModal();" class="flex-1 glass-btn !bg-red-600 !border-red-600 py-3">Excluir</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        if (window.lucide) window.lucide.createIcons();
+      },
+
+      closeDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        if (modal) modal.remove();
+      },
+
+      editAssessment(id) {
+        const assessment = this.history.find(h => h.id === id);
+        if (!assessment) return;
+
+        this.assessment = { ...assessment };
+        this.loadAssessment(id);
+        this.showToast('Modo edição ativado. Faça as alterações e salve.', 'info');
+      },
+
+      duplicateAssessment(id) {
+        const assessment = this.history.find(h => h.id === id);
+        if (!assessment) return;
+
+        const newAssessment = {
+          ...assessment,
+          id: Date.now().toString(),
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toTimeString().slice(0, 5),
+          createdAt: new Date()
+        };
+
+        this.history.unshift(newAssessment);
+        this.saveHistory();
+        this.updateDashboard();
+        this.renderHistory();
+        this.showToast('Avaliação duplicada com sucesso', 'success');
+      },
+
+      showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const colors = {
+          success: 'bg-green-500',
+          error: 'bg-red-500',
+          info: 'bg-blue-500',
+          warning: 'bg-yellow-500'
+        };
+        const icons = {
+          success: 'check-circle',
+          error: 'x-circle',
+          info: 'info',
+          warning: 'alert-triangle'
+        };
+
+        toast.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-4 rounded-2xl shadow-xl z-50 flex items-center gap-3 transform transition-all translate-y-0 opacity-100`;
+        toast.innerHTML = `
+          <i data-lucide="${icons[type]}" class="w-5 h-5"></i>
+          <span class="font-medium">${message}</span>
+        `;
+
+        document.body.appendChild(toast);
+        if (window.lucide) window.lucide.createIcons();
+
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(20px)';
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
       }
     };
 
