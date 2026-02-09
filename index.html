@@ -2465,8 +2465,44 @@
         }).length;
         const highRisk = this.history.filter(h => getTotalScore(h) >= 7).length;
 
-        // Chart.js Implementation
-        const ctx = document.getElementById('riskChart').getContext('2d');
+        // Update Custom Legend FIRST (independent of Chart.js)
+        const legendContainer = document.getElementById('risk-legend');
+        if (legendContainer) {
+          legendContainer.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-[#2D6A4F]"></div>
+              <div>
+                <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Baixo</p>
+                <p class="text-xs text-gray-500">${lowRisk} avaliações</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-[#B45309]"></div>
+              <div>
+                <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Moderado</p>
+                <p class="text-xs text-gray-500">${moderateRisk} avaliações</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-[#991B1B]"></div>
+              <div>
+                <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Alto</p>
+                <p class="text-xs text-gray-500">${highRisk} avaliações</p>
+              </div>
+            </div>
+          `;
+        }
+
+        // Chart.js Implementation with Defensive Loading
+        if (typeof Chart === 'undefined') {
+          console.log('Chart.js not loaded yet, retrying in 500ms...');
+          setTimeout(() => this.updateDashboard(), 500);
+          return;
+        }
+
+        const riskChartEl = document.getElementById('riskChart');
+        if (!riskChartEl) return;
+        const ctx = riskChartEl.getContext('2d');
 
         if (window.myRiskChart) {
           window.myRiskChart.destroy();
@@ -2523,32 +2559,6 @@
             }
           }
         });
-
-        // Update Custom Legend
-        const legendContainer = document.getElementById('risk-legend');
-        legendContainer.innerHTML = `
-          <div class="flex items-center gap-3">
-            <div class="w-3 h-3 rounded-full bg-[#2D6A4F]"></div>
-            <div>
-              <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Baixo</p>
-              <p class="text-xs text-gray-500">${lowRisk} avaliações</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="w-3 h-3 rounded-full bg-[#B45309]"></div>
-            <div>
-              <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Moderado</p>
-              <p class="text-xs text-gray-500">${moderateRisk} avaliações</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="w-3 h-3 rounded-full bg-[#991B1B]"></div>
-            <div>
-              <p class="text-sm font-bold text-[#1A3A34] uppercase tracking-wide">Alto</p>
-              <p class="text-xs text-gray-500">${highRisk} avaliações</p>
-            </div>
-          </div>
-        `;
 
         // Recent assessments list...
 
