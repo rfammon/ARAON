@@ -1,12 +1,28 @@
 # ARAON Project - GitHub Pages
-index.html
 
 # GitHub Actions
-.github/
+# (Allowed by default if not listed here, but making it explicit that it shouldn't be ignored)
+!.github/
 
 # OS files
 .DS_Store
 Thumbs.db
+
+# Misc
+*.xlsx
+*.docx
+*.py
+*.tmp
+~$*
+node_modules/
+dist/
+web-build/
+skill/
+TimeTrackerApp/
+brain/
+walkthrough.md
+implementation_plan.md
+task.md
 
 # Misc
 *.xlsx
